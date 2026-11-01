@@ -8,7 +8,7 @@ import { DEMO_KEY, discardSession, loadSession } from '@/lib/session-store';
 import { useSettings } from '@/lib/settings';
 import type { SurfaceHandle } from '@/lib/surface';
 
-/** Demo form session, filled in the replica. The Google Forms extension will reuse this flow. */
+/** Demo form session, filled in the replica. Google Forms by link (/form) reuses this flow. */
 export default function SessionPage() {
   const { settings } = useSettings();
   const surfaceRef = useRef<SurfaceHandle | null>(null);

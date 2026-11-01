@@ -12,8 +12,8 @@ const PERSONAS = [
 const SOURCES = [
   {
     title: 'Google Forms',
-    body: 'The AwaazForm Chrome extension fills your form in the real tab, field by field, and checks each one.',
-    tag: 'Chrome extension',
+    body: 'Paste a form link. Answer by voice, then open the real form with your confirmed answers filled in. No install needed.',
+    tag: 'Paste a link',
   },
   {
     title: 'Fillable PDFs',
@@ -62,7 +62,7 @@ export default function Home() {
           </Reveal>
           <Reveal delay={0.24} className="flex flex-wrap justify-center gap-3">
             <Link href="/session" className="btn">Try the demo form</Link>
-            <a href="#sources" className="btn btn-ghost">How it works</a>
+            <Link href="/form" className="btn btn-ghost">Paste a Google Form link</Link>
           </Reveal>
         </div>
 
@@ -168,7 +168,10 @@ export default function Home() {
         <div className="container-x grid justify-items-center gap-8">
           <Reveal><span style={{ color: 'var(--accent)' }}><Wave bars={24} /></span></Reveal>
           <Reveal delay={0.08}><h2 className="max-w-[520px] text-[clamp(2rem,4vw,2.75rem)]">Start with the<br />demo form today.</h2></Reveal>
-          <Reveal delay={0.16}><Link href="/session" className="btn">Try the demo form</Link></Reveal>
+          <Reveal delay={0.16} className="flex flex-wrap justify-center gap-3">
+            <Link href="/session" className="btn">Try the demo form</Link>
+            <Link href="/form" className="btn btn-ghost">Paste a Google Form link</Link>
+          </Reveal>
         </div>
       </section>
 

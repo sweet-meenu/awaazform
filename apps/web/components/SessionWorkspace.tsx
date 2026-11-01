@@ -48,8 +48,8 @@ export interface WorkspaceProps {
   surfaceLabel: string;
   surface: ReactNode;
   surfaceRef: RefObject<SurfaceHandle | null>;
-  /** Extra controls in the top bar, e.g. “Download PDF”. */
-  actions?: ReactNode;
+  /** Extra controls in the top bar, e.g. “Download PDF”; a function gets the live session. */
+  actions?: ReactNode | ((s: Session) => ReactNode);
   /** Shown before the session starts, under the scan summary. */
   intro?: ReactNode;
   onDiscard: () => void;
@@ -508,7 +508,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
               {live !== 'off' ? <Wave bars={4} /> : <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: 'var(--red-600)' }} />}
               {t.live_mode}{live !== 'off' ? ': on' : ''}
             </button>
-            {props.actions}
+            {typeof props.actions === 'function' ? props.actions(session) : props.actions}
             <details className="menu">
               <summary className="btn-quiet" aria-label="More options">•••</summary>
               <div className="menu-panel">

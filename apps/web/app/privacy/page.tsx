@@ -30,6 +30,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Our server">
+        <li><b>Google Form links:</b> when you paste one, the server fetches that public form from Google to read its questions. Your answers never pass through the server; they go into a pre-filled link that opens in your own browser.</li>
         <li>The server only relays requests to Groq. It stores nothing and does not log request bodies.</li>
         <li>The Groq API key lives only on the server and is never sent to your browser or the extension.</li>
       </Section>
