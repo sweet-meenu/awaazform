@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sweet-meenu/awaazform/releases/download/v0.1.0/awaazform-explainer.mp4"><img src="https://img.shields.io/badge/Watch_the_2--min_explainer-624DE3?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the explainer" /></a>
+  <a href="https://awaazform.vercel.app"><img src="https://img.shields.io/badge/Try_it_live-624DE3?style=for-the-badge&logo=vercel&logoColor=white" alt="Try it live" /></a>
+  <a href="https://github.com/sweet-meenu/awaazform/releases/download/v0.1.0/awaazform-explainer.mp4"><img src="https://img.shields.io/badge/Watch_the_2--min_explainer-151718?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the explainer" /></a>
 </p>
 
 <p align="center">
@@ -77,7 +78,7 @@ Without a key the app still works: you type your answers, and read-back uses the
 
 ## Deploy on Vercel
 
-Import the repo, set **Root Directory** to `apps/web`, and add the variables from [`.env.example`](apps/web/.env.example). Vercel detects Next.js and pnpm on its own.
+Live at **[awaazform.vercel.app](https://awaazform.vercel.app)**. To deploy your own copy, import the repo, set **Root Directory** to `apps/web`, and add the variables from [`.env.example`](apps/web/.env.example). Vercel detects Next.js and pnpm on its own.
 
 ## Project layout
 
