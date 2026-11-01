@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AwaazForm explainer</title>
+<style>
+  @font-face { font-family: Inter; src: url(/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: Deva; src: url(/node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2) format('woff2'); font-weight: 400; }
+  @font-face { font-family: Deva; src: url(/node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-600-normal.woff2) format('woff2'); font-weight: 600; }
+  :root {
+    --ink: #151718; --ink9: #1a1d1e; --muted: #4c5155; --line: #e6e8eb; --sub: #f6f7f9;
+    --violet: #624de3; --violet3: #ab9ff4; --violet1: #efedfd; --magenta: #c63af8; --green: #007a34; --green1: #e9f8ef; --amber: #8a5300;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #fff; }
+  body { font-family: Inter, Deva, system-ui, sans-serif; color: var(--ink9); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  .abs { position: absolute; }
+  .bg { position: absolute; inset: 0; }
+  .glow { position: absolute; width: 1400px; height: 1000px; border-radius: 50%; filter: blur(90px); }
+  .scene { position: absolute; inset: 0; }
+  h1, h2, .display { font-weight: 650; letter-spacing: -0.035em; line-height: 1.05; }
+  .grad { background: linear-gradient(90deg, #6e56cf, #c27ef0 60%, #6e56cf); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .chip { display: inline-flex; align-items: center; gap: 12px; padding: 14px 24px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-weight: 600; font-size: 30px; box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 16px 32px rgba(0,0,0,.08); white-space: nowrap; }
+  .card { border-radius: 28px; background: linear-gradient(180deg, #fff, var(--sub)); border: 1px solid var(--line); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 24px 48px rgba(0,0,0,.10); }
+  /* Browser mockup */
+  .win { position: absolute; border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 8px rgba(0,0,0,.06), 0 40px 90px rgba(98,77,227,.28); }
+  .win .bar { height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 1px solid var(--line); background: #fbfbfc; }
+  .win .bar i { width: 13px; height: 13px; border-radius: 50%; background: #e6e8eb; display: inline-block; }
+  .win .url { margin-left: 18px; flex: 1; height: 28px; border-radius: 8px; background: var(--sub); color: var(--muted); font-size: 15px; display: flex; align-items: center; padding: 0 14px; }
+  .win .vp { position: relative; overflow: hidden; }
+  .win .cam { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; transform-origin: 0 0; }
+  .win .cam img { position: absolute; inset: 0; width: 1600px; height: 1000px; }
+  .ring { position: absolute; border: 4px solid var(--violet); border-radius: 18px; box-shadow: 0 0 0 8px rgba(98,77,227,.18); }
+  /* Captions */
+  #cap { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); width: max-content; max-width: 1620px; padding: 12px 28px; border-radius: 18px; background: rgba(21,23,24,.86); color: #fff; font-size: 27px; font-weight: 500; line-height: 1.35; text-align: center; backdrop-filter: blur(8px); }
+  #cap .who { color: var(--violet3); font-weight: 700; margin-right: 10px; }
+  #cap .dim { color: rgba(255,255,255,.5); }
+  .bubble { position: absolute; padding: 22px 30px; border-radius: 28px; background: #fff; border: 1px solid var(--line); font-size: 36px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 24px 48px rgba(0,0,0,.12); }
+  .bubble.user { background: var(--ink9); color: #fff; border-color: transparent; }
+  .wave { display: inline-flex; gap: 5px; align-items: center; height: 40px; vertical-align: middle; }
+  .wave b { width: 6px; border-radius: 3px; background: currentColor; display: block; }
+  .tile { position: absolute; display: grid; place-items: center; text-align: center; gap: 14px; padding: 30px; border-radius: 30px; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 24px 48px rgba(0,0,0,.10); font-size: 30px; font-weight: 650; }
+  .tile .ic { font-size: 64px; line-height: 1; }
+  .logo { display: flex; align-items: center; gap: 14px; font-weight: 700; font-size: 34px; letter-spacing: -0.02em; }
+  .logo .m { width: 46px; height: 46px; border-radius: 13px; background: linear-gradient(135deg, var(--violet), var(--magenta)); display: grid; grid-auto-flow: column; place-items: center; padding: 0 11px; gap: 3px; }
+  .logo .m i { width: 5px; border-radius: 3px; background: #fff; display: block; }
+  .x { position: absolute; font-weight: 800; color: #e5484d; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bg"></div>
+  <div class="glow" id="glowA"></div>
+  <div class="glow" id="glowB"></div>
+  <div id="scenes"></div>
+  <div id="cursor" class="abs" style="z-index:40;width:44px;height:44px;opacity:0">
+    <svg width="44" height="44" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#624de3" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <span id="ripple" class="abs" style="left:-26px;top:-26px;width:60px;height:60px;border-radius:50%;border:4px solid #624de3;opacity:0"></span>
+  </div>
+  <div id="bolu" class="abs" style="z-index:30;width:220px;height:260px;transform-origin:110px 260px"></div>
+  <div id="cap"></div>
+  <div id="brand" class="abs logo" style="left:56px;top:40px;z-index:35"><span class="m"><i style="height:12px"></i><i style="height:22px"></i><i style="height:14px"></i></span><span id="brandText">AwaazForm</span></div>
+</div>
+
+<script>
+// ---------------- utilities ----------------
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeIO = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+const backOut = (k) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+/** 0→1 over [a, a+d], eased. */
+const p = (t, a, d = 0.6, e = easeOut) => e(clamp((t - a) / d));
+/** Pop-in scale with overshoot. */
+const pop = (t, a, d = 0.55) => (t < a ? 0 : backOut(clamp((t - a) / d)));
+const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
+const css = (e, o) => { for (const k in o) e.style[k] = o[k]; return e; };
+const vis = (e, o, extra = '') => css(e, { opacity: o, transform: extra });
+
+let TL, R; // timeline, regions
+const scene = (id) => TL.scenes.find((s) => s.id === id);
+const line = (id) => TL.lines.find((l) => l.id === id);
+
+// ---------------- browser mockup with camera ----------------
+class Shot {
+  constructor(parent, imgs, url) {
+    this.el = el(`<div class="win"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 ${url}</div></div><div class="vp"><div class="cam"></div></div></div>`);
+    this.cam = $('.cam', this.el); this.vp = $('.vp', this.el);
+    this.imgs = {};
+    for (const [k, src] of Object.entries(imgs)) {
+      const im = document.createElement('img'); im.src = src; im.style.opacity = 0;
+      this.cam.appendChild(im); this.imgs[k] = im;
+    }
+    parent.appendChild(this.el);
+  }
+  place(x, y, w, opacity = 1, extra = '') {
+    this.w = w; this.h = Math.round(w * 0.625);
+    css(this.el, { left: x + 'px', top: y + 'px', width: w + 'px', opacity, transform: extra });
+    css(this.vp, { width: w + 'px', height: this.h + 'px' });
+  }
+  show(map) { for (const k in this.imgs) this.imgs[k].style.opacity = map[k] ?? 0; }
+  /** Camera that frames a region (in 1600x1000 screenshot px), or the full page when null. */
+  camFor(r, maxZoom = 2.4, pad = 36) {
+    const base = this.w / 1600;
+    if (!r) return { s: base, x: 0, y: 0 };
+    let s = Math.min(this.w / (r.w + pad * 2), this.h / (r.h + pad * 2));
+    s = clamp(s, base, maxZoom * base);
+    let x = this.w / 2 - (r.x + r.w / 2) * s, y = this.h / 2 - (r.y + r.h / 2) * s;
+    x = clamp(x, this.w - 1600 * s, 0); y = clamp(y, this.h - 1000 * s, 0);
+    return { s, x, y };
+  }
+  /** keys: [{t, r, z}] — eases to each key's framing over `d` seconds starting at key.t. */
+  camera(t, keys, d = 1.0) {
+    let cur = this.camFor(keys[0].r, keys[0].z);
+    for (let i = 1; i < keys.length; i++) {
+      if (t < keys[i].t) break;
+      const next = this.camFor(keys[i].r, keys[i].z);
+      const k = p(t, keys[i].t, keys[i].d ?? d, easeIO);
+      cur = { s: lerp(cur.s, next.s, k), x: lerp(cur.x, next.x, k), y: lerp(cur.y, next.y, k) };
+    }
+    this.cur = cur;
+    this.cam.style.transform = `translate(${cur.x}px, ${cur.y}px) scale(${cur.s})`;
+  }
+  /** Maps a screenshot region to stage coordinates under the current camera. */
+  toStage(r) {
+    const left = parseFloat(this.el.style.left), top = parseFloat(this.el.style.top) + 46;
+    return { x: left + this.cur.x + r.x * this.cur.s, y: top + this.cur.y + r.y * this.cur.s, w: r.w * this.cur.s, h: r.h * this.cur.s };
+  }
+}
+
+// ---------------- Bolu the robot ----------------
+const BOLU = `
+<svg width="220" height="260" viewBox="0 0 220 260" style="overflow:visible">
+  <defs>
+    <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a63f0"/><stop offset="1" stop-color="#c63af8"/></linearGradient>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#eef0f4"/></linearGradient>
+    <radialGradient id="ballg"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#ffd387"/><stop offset="1" stop-color="#f7a12b"/></radialGradient>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <ellipse id="b-shadow" cx="110" cy="252" rx="62" ry="10" fill="#151718" opacity=".16"/>
+  <g id="b-all">
+    <g id="b-armL" style="transform-origin:58px 160px"><rect x="22" y="152" width="40" height="22" rx="11" fill="url(#hg)"/><circle cx="24" cy="163" r="13" fill="#ab9ff4"/></g>
+    <g id="b-armR" style="transform-origin:162px 160px"><rect x="158" y="152" width="40" height="22" rx="11" fill="url(#hg)"/><circle cx="196" cy="163" r="13" fill="#ab9ff4"/></g>
+    <rect x="56" y="128" width="108" height="100" rx="42" fill="url(#bg2)" stroke="#e1e3ea" stroke-width="2"/>
+    <rect x="84" y="160" width="52" height="40" rx="14" fill="url(#hg)"/>
+    <rect id="b-bar1" x="98" y="172" width="6" height="16" rx="3" fill="#fff"/>
+    <rect id="b-bar2" x="107" y="166" width="6" height="28" rx="3" fill="#fff"/>
+    <rect id="b-bar3" x="116" y="170" width="6" height="20" rx="3" fill="#fff"/>
+    <g id="b-head">
+      <line x1="110" y1="44" x2="110" y2="18" stroke="#7a63f0" stroke-width="6" stroke-linecap="round"/>
+      <circle id="b-glow" cx="110" cy="14" r="16" fill="#ffd387" filter="url(#soft)" opacity=".7"/>
+      <circle cx="110" cy="14" r="10" fill="url(#ballg)"/>
+      <circle cx="20" cy="96" r="13" fill="#ab9ff4"/><circle cx="200" cy="96" r="13" fill="#ab9ff4"/>
+      <rect x="22" y="38" width="176" height="114" rx="50" fill="url(#hg)"/>
+      <rect x="42" y="56" width="136" height="80" rx="36" fill="#151718"/>
+      <ellipse cx="80" cy="70" rx="22" ry="6" fill="#fff" opacity=".08"/>
+      <g id="b-eyes">
+        <rect id="b-eyeL" x="72" y="74" width="20" height="26" rx="10" fill="#bff3ff"/>
+        <rect id="b-eyeR" x="128" y="74" width="20" height="26" rx="10" fill="#bff3ff"/>
+        <circle cx="86" cy="80" r="3.5" fill="#fff"/><circle cx="142" cy="80" r="3.5" fill="#fff"/>
+      </g>
+      <circle cx="64" cy="114" r="8" fill="#ff7eb3" opacity=".55"/><circle cx="156" cy="114" r="8" fill="#ff7eb3" opacity=".55"/>
+      <path id="b-smile" d="M96 112 Q110 124 124 112" stroke="#bff3ff" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <ellipse id="b-mouth" cx="110" cy="116" rx="12" ry="2" fill="#ff8fb1" opacity="0"/>
+    </g>
+  </g>
+</svg>`;
+
+const bolu = { el: null };
+function setBolu(t, { x, y, s = 1, wave = 0, point = 0, look = [0, 0], tilt = 0, shake = 0, jump = 0 }) {
+  const f = Math.round(t * TL.fps);
+  const mouth = TL.mouth[f] ?? 0;
+  const bob = Math.sin(t * 2.4) * 7 - jump;
+  css(bolu.el, { left: x - 110 + 'px', top: y - 260 + 'px', transform: `scale(${s}) rotate(${tilt + Math.sin(t * 9) * 4 * shake}deg)` });
+  $('#b-all', bolu.el).setAttribute('transform', `translate(0 ${bob})`);
+  $('#b-shadow', bolu.el).setAttribute('rx', 62 - bob * 0.8);
+  const blink = (t % 3.4) > 3.27 ? 0.12 : 1;
+  // Eyes look toward the subject and blink (scale about each eye's centre).
+  for (const [id, cx] of [['#b-eyeL', 82], ['#b-eyeR', 138]]) {
+    $(id, bolu.el).setAttribute('transform', `translate(${look[0] * 6} ${look[1] * 5}) translate(${cx} 87) scale(1 ${blink}) translate(${-cx} -87)`);
+  }
+  $('#b-mouth', bolu.el).setAttribute('ry', 2 + mouth * 11);
+  $('#b-mouth', bolu.el).setAttribute('opacity', mouth > 0.04 ? 1 : 0);
+  $('#b-smile', bolu.el).setAttribute('opacity', mouth > 0.04 ? 0 : 1);
+  $('#b-glow', bolu.el).setAttribute('opacity', 0.45 + 0.35 * Math.sin(t * 4) + mouth * 0.4);
+  [['#b-bar1', 16], ['#b-bar2', 28], ['#b-bar3', 20]].forEach(([id, h], i) => {
+    const hh = h * (0.45 + 0.55 * (mouth > 0.04 ? 0.5 + 0.5 * Math.sin(t * 18 + i * 2) : 0.4));
+    const b = $(id, bolu.el); b.setAttribute('height', hh); b.setAttribute('y', 180 - hh / 2);
+  });
+  const armR = wave ? -120 + Math.sin(t * 10) * 28 * wave : point > 0 ? -55 : 12 + Math.sin(t * 2.4) * 4;
+  const armL = point < 0 ? 55 : -12 - Math.sin(t * 2.4) * 4;
+  $('#b-armR', bolu.el).style.transform = `rotate(${armR}deg)`;
+  $('#b-armL', bolu.el).style.transform = `rotate(${armL}deg)`;
+  $('#b-head', bolu.el).setAttribute('transform', `rotate(${Math.sin(t * 1.7) * 3 + tilt * 0.3} 110 95)`);
+}
+
+// ---------------- scenes ----------------
+const S = {}; // id -> {root, render(t)}
+const stageEl = () => $('#scenes');
+
+function mkScene(id, html = '') { const r = el(`<div class="scene" id="sc-${id}">${html}</div>`); stageEl().appendChild(r); return r; }
+
+function buildScenes() {
+  // 1. intro
+  {
+    const r = mkScene('intro', `
+      <div class="abs bubble" id="i-b" style="left:1010px;top:330px">Hi! I'm <span class="grad">Bolu</span> 👋</div>
+      <div class="abs" id="i-sub" style="left:1010px;top:470px;font-size:30px;color:var(--muted);font-weight:500">your helper inside AwaazForm</div>`);
+    S.intro = { root: r, render(t) {
+      const s = scene('intro');
+      vis($('#i-b', r), p(t, 1.6, 0.5), `scale(${0.6 + 0.4 * pop(t, 1.6)})`);
+      vis($('#i-sub', r), p(t, 2.6, 0.6), `translateY(${20 * (1 - p(t, 2.6))}px)`);
+      return { bolu: { x: 820, y: 720, s: 1.6 * pop(t, 0.3, 0.7), wave: t > 1.2 && t < s.end - 0.6 ? 1 : 0, look: [1, 0] } };
+    } };
+  }
+  // 2. problem — real Form 6 page, tiny boxes, jargon, typing; who struggles
+  {
+    const r = mkScene('problem', `
+      <div class="abs card" id="p-form" style="left:150px;top:140px;width:860px;height:740px;overflow:hidden;padding:0;background:#fff"><canvas id="p-canvas" style="position:absolute;left:0;top:-30px;width:860px"></canvas></div>
+      <div class="abs ring" id="p-ring"></div>
+      <div class="abs chip" id="p-c1" style="left:960px;top:240px">🔍 Tiny boxes</div>
+      <div class="abs chip" id="p-c2" style="left:1010px;top:340px;font-family:Inter">📄 “Pl. specify ERO/AERO/BLO…”</div>
+      <div class="abs chip" id="p-c3" style="left:980px;top:440px">⌨️ So much typing</div>
+      <div class="abs" id="p-who" style="left:1080px;top:600px;display:grid;gap:18px">
+        <div class="chip" id="p-w1">👁️ Can't see well</div>
+        <div class="chip" id="p-w2">✋ Hard to type</div>
+        <div class="chip" id="p-w3" style="font-family:Deva,Inter">🗣️ हिन्दी is easier</div>
+      </div>`);
+    S.problem = { root: r, render(t) {
+      const c = TL.cues.problem, s = scene('problem');
+      vis($('#p-form', r), p(t, s.start, 0.7), `translateY(${40 * (1 - p(t, s.start, 0.8))}px) rotate(${-3 + 2 * p(t, s.start, 1)}deg)`);
+      // Ring the tiny character boxes of “First Name” (PDF points → card px).
+      const k = 860 / 612, ring = $('#p-ring', r);
+      css(ring, { left: 150 + 182 * k + 'px', top: 140 - 30 + (842 - 632) * k + 'px', width: 300 * k + 'px', height: 36 * k + 'px' });
+      vis(ring, p(t, c.tiny, 0.3) * (0.6 + 0.4 * Math.sin(t * 6)));
+      [['#p-c1', c.tiny], ['#p-c2', c.words], ['#p-c3', c.typing]].forEach(([id, a]) => vis($(id, r), p(t, a, 0.35), `scale(${pop(t, a)}) rotate(${-2 + Math.sin(t * 2 + a) * 1.2}deg)`));
+      [['#p-w1', c.see], ['#p-w2', c.type], ['#p-w3', c.hindi]].forEach(([id, a]) => vis($(id, r), p(t, a, 0.35), `translateX(${60 * (1 - p(t, a, 0.5))}px)`));
+      return { bolu: { x: 1650, y: 990, s: 1.05, look: [-1, -0.5], tilt: -6 } };
+    } };
+  }
+  // 3. idea — landing page + kinetic tagline
+  {
+    const r = mkScene('idea', `
+      <div class="abs" id="d-words" style="left:0;right:0;top:110px;text-align:center;font-size:96px" class="display">
+        <span id="d-w1" class="display" style="display:inline-block">Your voice.</span>
+        <span id="d-w2" class="display" style="display:inline-block">Your form.</span>
+        <span id="d-w3" class="display grad" style="display:inline-block">Your access.</span>
+      </div>`);
+    const shot = new Shot(r, { a: 'shots/landing.png' }, 'awaazform.app');
+    S.idea = { root: r, render(t) {
+      const c = TL.cues.idea, s = scene('idea');
+      const up = p(t, s.start + 0.1, 1.0, easeIO);
+      shot.place(340, lerp(1080, 290, up), 1240, 1);
+      shot.show({ a: 1 });
+      shot.camera(t, [{ t: 0, r: null }, { t: c.talking, r: R.landing_hero, z: 1.35, d: 1.4 }]);
+      [['#d-w1', c.voice], ['#d-w2', c.form], ['#d-w3', c.access]].forEach(([id, a]) => vis($(id, r), p(t, a - 0.1, 0.4), `translateY(${30 * (1 - p(t, a - 0.1, 0.5))}px) scale(${0.9 + 0.1 * pop(t, a - 0.1)})`));
+      return { bolu: { x: 210, y: 930, s: 1.1, look: [1, -0.6], point: 1 } };
+    } };
+  }
+  // 4. confidence loop
+  {
+    const steps = [['🎙️', 'Listen'], ['✍️', 'Write down'], ['✅', 'Check'], ['🔊', 'Read back']];
+    const r = mkScene('loop', `
+      <div class="abs display" id="l-title" style="left:0;right:0;top:96px;text-align:center;font-size:64px">The <span class="grad">Confidence Loop</span></div>
+      <svg class="abs" id="l-ring" width="760" height="760" style="left:580px;top:130px;transform:scale(.82)"><circle cx="380" cy="380" r="300" fill="none" stroke="#e6e8eb" stroke-width="10"/><circle id="l-arc" cx="380" cy="380" r="300" fill="none" stroke="url(#lg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="1885" stroke-dashoffset="1885" transform="rotate(-90 380 380)"/><defs><linearGradient id="lg"><stop offset="0" stop-color="#624de3"/><stop offset="1" stop-color="#c63af8"/></linearGradient></defs></svg>
+      ${steps.map(([ic, tx], i) => `<div class="abs chip" id="l-s${i}" style="font-size:34px;padding:18px 28px">${ic} ${tx}</div>`).join('')}
+      <div class="abs" id="l-yes" style="left:660px;top:836px;width:600px;text-align:center"><span class="chip" style="background:var(--green);color:#fff;border-color:transparent;font-size:36px;padding:18px 34px">✓ Only after you say yes</span></div>`);
+    const pos = [[960, 264], [1206, 510], [960, 756], [714, 510]];
+    S.loop = { root: r, render(t) {
+      const c = TL.cues.loop, s = scene('loop');
+      const cues = [c.listen, c.write, c.check, c.read];
+      vis($('#l-title', r), p(t, s.start, 0.6), `translateY(${-20 * (1 - p(t, s.start))}px)`);
+      vis($('#l-ring', r), p(t, s.start + 0.2, 0.6));
+      const prog = cues.reduce((n, a) => n + p(t, a, 0.6), 0) / 4;
+      $('#l-arc', r).setAttribute('stroke-dashoffset', 1885 * (1 - prog));
+      cues.forEach((a, i) => {
+        const e = $('#l-s' + i, r), on = p(t, a, 0.3), active = t >= a && (i === 3 ? t < c.yes : t < cues[i + 1]);
+        css(e, { left: pos[i][0] + 'px', top: pos[i][1] + 'px', opacity: 0.25 + 0.75 * on, transform: `translate(-50%,-50%) scale(${(0.8 + 0.2 * pop(t, a)) * (active ? 1.12 : 1)})`, background: active ? 'var(--violet1)' : '#fff', borderColor: active ? 'var(--violet)' : 'var(--line)' });
+      });
+      vis($('#l-yes', r), p(t, c.yes, 0.4), `scale(${pop(t, c.yes)})`);
+      const which = cues.filter((a) => t >= a).length;
+      const look = [[0, -1], [1, 0], [0, 1], [-1, 0], [0, 0.6]][which ? which - 1 : 0];
+      return { bolu: { x: 960, y: 610, s: 0.95, look, jump: t > c.yes ? Math.abs(Math.sin((t - c.yes) * 7)) * 18 * (1 - p(t, c.yes + 0.8, 0.6)) : 0 } };
+    } };
+  }
+  // 5. demo — ask, answer, read back, confirm, type, verify
+  {
+    const r = mkScene('demo', `
+      <div class="abs bubble" id="m-ask" style="left:160px;top:250px">What is your date of birth?</div>
+      <div class="abs bubble user" id="m-ans" style="left:160px;top:400px;display:flex;align-items:center;gap:18px">
+        <span style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#ab9ff4,#c63af8);display:inline-block"></span>
+        <span>“Twelve March, nineteen seventy eight.”</span><span class="wave" id="m-wave"></span>
+      </div>
+      <div class="abs ring" id="m-ring"></div>
+      <div class="abs chip" id="m-ver" style="background:var(--green);color:#fff;border-color:transparent;font-size:34px">✓ Verified in the form</div>`);
+    for (let i = 0; i < 9; i++) $('#m-wave', r).appendChild(document.createElement('b'));
+    const shot = new Shot(r, { q: 'shots/session-question.png', p: 'shots/session-proposed.png', v: 'shots/session-verified.png' }, 'awaazform.app/session');
+    S.demo = { root: r, render(t) {
+      const c = TL.cues.demo, s = scene('demo');
+      const intoApp = p(t, c.readback - 0.6, 0.9, easeIO);
+      // Before the read-back the window sits right; then it takes the stage.
+      shot.place(lerp(980, 300, intoApp), lerp(220, 130, intoApp), lerp(860, 1320, intoApp), p(t, s.start, 0.6));
+      const xq = p(t, c.readback - 0.2, 0.5), xv = p(t, c.verify, 0.5);
+      shot.show({ q: 1 - xq, p: xq * (1 - xv), v: xv });
+      shot.camera(t, [
+        { t: 0, r: R.question_card, z: 1.6 },
+        { t: c.readback, r: R.readback, z: 2.0 },
+        { t: c.type - 0.3, r: R.replica_dob_p, z: 1.9, d: 1.2 },
+        { t: c.verify + 0.2, r: { x: R.question_card.x, y: R.question_card.y, w: R.replica_dob_v.x + R.replica_dob_v.w - R.question_card.x, h: R.replica_dob_v.y + R.replica_dob_v.h - R.question_card.y }, z: 1.3, d: 1.2 },
+      ]);
+      vis($('#m-ask', r), p(t, c.ask, 0.35) * (1 - p(t, c.readback - 0.6, 0.4)), `scale(${pop(t, c.ask)})`);
+      vis($('#m-ans', r), p(t, c.answer, 0.35) * (1 - p(t, c.readback - 0.6, 0.4)), `translateX(${-40 * (1 - p(t, c.answer, 0.5))}px)`);
+      [...$('#m-wave', r).children].forEach((b, i) => { const on = t > c.answer && t < c.answerEnd; b.style.height = (on ? 10 + 28 * Math.abs(Math.sin(t * 13 + i * 1.3)) : 8) + 'px'; });
+      // Ring around "Is this right?" then the confirm button.
+      const ring = $('#m-ring', r);
+      if (t > c.isRight - 0.3 && t < c.type - 0.3) {
+        const target = t < c.confirm - 0.2 ? R.readback : R.confirm_btn;
+        const b = shot.toStage(target);
+        css(ring, { left: b.x - 12 + 'px', top: b.y - 12 + 'px', width: b.w + 24 + 'px', height: b.h + 24 + 'px', opacity: 0.6 + 0.4 * Math.sin(t * 6) });
+      } else ring.style.opacity = 0;
+      // Cursor clicks Confirm.
+      const cur = $('#cursor');
+      if (t > c.confirm - 1.0 && t < c.confirm + 1.0) {
+        const b = shot.toStage(R.confirm_btn);
+        const k = p(t, c.confirm - 1.0, 0.85, easeIO);
+        css(cur, { opacity: 1, left: lerp(1700, b.x + b.w * 0.45, k) + 'px', top: lerp(900, b.y + b.h * 0.5, k) + 'px', transform: `scale(${t > c.confirm && t < c.confirm + 0.15 ? 0.85 : 1})` });
+        const rk = clamp((t - c.confirm) / 0.5);
+        css($('#ripple'), { opacity: t > c.confirm ? 1 - rk : 0, transform: `scale(${0.4 + rk * 1.4})` });
+        S._cursorOwner = 'demo';
+      } else if (S._cursorOwner === 'demo') { cur.style.opacity = 0; }
+      vis($('#m-ver', r), p(t, c.verify + 0.3, 0.35), `translate(1290px, 52px) scale(${pop(t, c.verify + 0.3)})`);
+      const pose = t < c.readback - 0.4 ? { x: 1720, y: 1010, s: 0.95, look: [-1, -0.3] } : { x: 1760, y: 1010, s: 0.85, look: [-1, -0.4], point: -1 };
+      return { bolu: { ...pose, jump: t > c.verify ? 22 * Math.abs(Math.sin((t - c.verify) * 8)) * (1 - p(t, c.verify + 0.6, 0.5)) : 0 } };
+    } };
+  }
+  // 6. activity timeline
+  {
+    const r = mkScene('timeline', `<div class="abs display" id="t-title" style="left:120px;top:250px;font-size:72px;width:560px">No hidden<br/><span class="grad">actions.</span> Ever.</div>
+      <div class="abs" id="t-sub" style="left:124px;top:470px;font-size:32px;color:var(--muted);width:520px;line-height:1.4">Every step appears in the activity list, in plain words.</div>`);
+    const shot = new Shot(r, { a: 'shots/session-activity.png' }, 'awaazform.app/session');
+    S.timeline = { root: r, render(t) {
+      const s = scene('timeline');
+      shot.place(740, 160, 1080, p(t, s.start, 0.5), `translateX(${80 * (1 - p(t, s.start, 0.8))}px)`);
+      shot.show({ a: 1 });
+      shot.camera(t, [{ t: 0, r: null }, { t: s.start + 0.6, r: R.activity, z: 1.7, d: 1.6 }, { t: s.start + 3.6, r: { ...R.activity, y: R.activity.y + 260, h: 420 }, z: 1.8, d: 2.4 }]);
+      vis($('#t-title', r), p(t, s.start + 0.3, 0.5), `translateY(${30 * (1 - p(t, s.start + 0.3))}px)`);
+      vis($('#t-sub', r), p(t, s.start + 0.8, 0.5));
+      return { bolu: { x: 330, y: 960, s: 0.95, look: [1, -0.5], point: 1 } };
+    } };
+  }
+  // 7. PDF — upload, local, find, nudge, fill, tick
+  {
+    const r = mkScene('pdf', `
+      <div class="abs" id="f-file" style="width:150px;height:190px;border-radius:14px;background:#fff;border:1px solid var(--line);box-shadow:0 20px 40px rgba(0,0,0,.18);display:grid;place-items:center;align-content:center;gap:8px;font-weight:700;font-size:20px;z-index:5">
+        <div style="width:70px;height:84px;border-radius:8px;background:linear-gradient(180deg,#ffe8e8,#ffd0d0);display:grid;place-items:center;color:#c4282f;font-size:22px">PDF</div>Form 6</div>
+      <div class="abs chip" id="f-local" style="font-size:30px">🔒 Never leaves your browser</div>
+      <div class="abs ring" id="f-ring"></div>
+      <div class="abs chip" id="f-tick" style="background:var(--violet);color:#fff;border-color:transparent">✓ Ticked: Female</div>`);
+    const shot = new Shot(r, { u: 'shots/pdf-upload.png', v: 'shots/pdf-review.png', f: 'shots/pdf-filled.png' }, 'awaazform.app/pdf');
+    S.pdf = { root: r, render(t) {
+      const c = TL.cues.pdf, s = scene('pdf');
+      shot.place(300, 130, 1320, p(t, s.start, 0.5));
+      const xv = p(t, c.find - 0.3, 0.5), xf = p(t, c.fill - 0.3, 0.5);
+      shot.show({ u: 1 - xv, v: xv * (1 - xf), f: xf });
+      const filled = R.pdf_filled || [];
+      const fb = filled.length ? filled.reduce((a, b) => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), x2: Math.max(a.x2, b.x + b.w), y2: Math.max(a.y2, b.y + b.h) }), { x: 1e9, y: 1e9, x2: 0, y2: 0 }) : null;
+      const gender = filled.find((b) => /^X$|^X\b/.test(b.text)) || filled.find((b) => b.text.length <= 2);
+      const tickR = gender ? { x: gender.x - 260, y: gender.y - 40, w: 560, h: 110 } : R.pdf_panel;
+      shot.camera(t, [
+        { t: 0, r: R.dropzone, z: 1.4 },
+        { t: c.find - 0.3, r: null, d: 0.8 },
+        { t: c.nudge, r: R.review_preview, z: 1.35, d: 1.0 },
+        { t: c.fill - 0.3, r: fb ? { x: fb.x - 20, y: fb.y - 30, w: fb.x2 - fb.x + 40, h: fb.y2 - fb.y + 60 } : R.pdf_panel, z: 1.5, d: 1.0 },
+        { t: c.tick, r: tickR, z: 2.6, d: 0.9 },
+      ]);
+      // The file flies into the drop zone.
+      const fk = p(t, c.upload - 0.5, 0.9, easeIO);
+      const dz = shot.toStage(R.dropzone);
+      css($('#f-file', r), { left: lerp(1660, dz.x + dz.w / 2 - 75, fk) + 'px', top: lerp(820, dz.y + dz.h / 2 - 95, fk) - Math.sin(fk * Math.PI) * 160 + 'px', opacity: p(t, s.start + 0.2, 0.4) * (1 - p(t, c.upload + 0.5, 0.4)), transform: `rotate(${(1 - fk) * 14}deg) scale(${1 - 0.3 * fk})` });
+      vis($('#f-local', r), p(t, c.local, 0.35) * (1 - p(t, c.find - 0.4, 0.3)), `translate(760px, 860px) scale(${pop(t, c.local)})`);
+      // Ring follows the tick box.
+      const ring = $('#f-ring', r);
+      if (gender && t > c.tick + 0.6) { const b = shot.toStage(gender); css(ring, { left: b.x - 14 + 'px', top: b.y - 14 + 'px', width: b.w + 28 + 'px', height: b.h + 28 + 'px', borderRadius: '50%', opacity: 0.6 + 0.4 * Math.sin(t * 6) }); }
+      else ring.style.opacity = 0;
+      vis($('#f-tick', r), p(t, c.tick + 0.7, 0.35), `translate(1280px, 860px) scale(${pop(t, c.tick + 0.7)})`);
+      // Cursor nudges a box during review.
+      const cur = $('#cursor');
+      if (t > c.nudge + 0.4 && t < c.fill - 0.4) {
+        const b = shot.toStage({ x: R.review_preview.x + R.review_preview.w * 0.55, y: R.review_preview.y + R.review_preview.h * 0.45, w: 1, h: 1 });
+        const k = Math.sin((t - c.nudge) * 2.2);
+        css(cur, { opacity: 1, left: b.x + k * 40 + 'px', top: b.y + Math.cos((t - c.nudge) * 2.2) * 16 + 'px', transform: 'scale(1)' });
+        $('#ripple').style.opacity = 0; S._cursorOwner = 'pdf';
+      } else if (S._cursorOwner === 'pdf') $('#cursor').style.opacity = 0;
+      return { bolu: { x: 170, y: 1000, s: 0.9, look: [1, -0.5], point: t > c.find ? 1 : 0 } };
+    } };
+  }
+  // 8. Live Mode (dark)
+  {
+    const r = mkScene('live', `
+      <div class="abs display" id="v-title" style="left:120px;top:150px;font-size:76px;color:#fff;width:640px">Live Mode:<br/><span class="grad">just talk.</span></div>
+      <div class="abs" id="v-orb" style="left:300px;top:520px;width:220px;height:220px">
+        <div id="v-r1" class="abs" style="inset:0;border-radius:50%;border:3px solid rgba(171,159,244,.6)"></div>
+        <div id="v-r2" class="abs" style="inset:0;border-radius:50%;border:3px solid rgba(198,58,248,.5)"></div>
+        <div class="abs" style="inset:30px;border-radius:50%;background:linear-gradient(135deg,#624de3,#c63af8);display:grid;place-items:center;font-size:72px;box-shadow:0 0 80px rgba(98,77,227,.7)">🎙️</div>
+      </div>
+      <div class="abs chip" id="v-c1" style="left:120px;top:820px">“Yes” → confirm</div>
+      <div class="abs chip" id="v-c2" style="left:420px;top:820px">“Next” → move on</div>
+      <div class="abs chip" id="v-c3" style="left:270px;top:910px">✋ Interrupt any time</div>`);
+    const shot = new Shot(r, { a: 'shots/live-on.png' }, 'awaazform.app/session');
+    S.live = { root: r, render(t) {
+      const c = TL.cues.live, s = scene('live');
+      shot.place(820, 170, 1000, p(t, s.start + 0.2, 0.5), `translateY(${40 * (1 - p(t, s.start + 0.2, 0.8))}px)`);
+      shot.show({ a: 1 });
+      shot.camera(t, [{ t: 0, r: null }, { t: c.on, r: R.live_panel, z: 1.6, d: 1.4 }]);
+      vis($('#v-title', r), p(t, s.start + 0.2, 0.5));
+      vis($('#v-orb', r), p(t, c.on - 0.3, 0.4), `scale(${pop(t, c.on - 0.3)})`);
+      for (const [id, off] of [['#v-r1', 0], ['#v-r2', 0.8]]) { const k = ((t + off) % 1.6) / 1.6; css($(id, r), { transform: `scale(${1 + k * 0.7})`, opacity: 1 - k }); }
+      [['#v-c1', c.yes], ['#v-c2', c.next], ['#v-c3', c.interrupt]].forEach(([id, a]) => vis($(id, r), p(t, a, 0.35), `scale(${pop(t, a)})`));
+      return { bolu: { x: 1790, y: 1000, s: 0.85, look: [-1, -0.4] } };
+    } };
+  }
+  // 9. safety
+  {
+    const r = mkScene('safety', `
+      <div class="abs display" id="y-title" style="left:0;right:0;top:110px;text-align:center;font-size:66px">Safe <span class="grad">by design</span></div>
+      <div class="abs card" id="y-1" style="left:160px;top:270px;width:500px;height:560px;padding:36px;display:grid;align-content:start;gap:16px">
+        <div style="font-size:70px">🔐</div><div style="font-size:36px;font-weight:700">Stays on your device</div>
+        <div style="font-size:24px;color:var(--muted)">Lock saved details with a passphrase.</div>
+        <div id="y-lock" style="height:230px;border-radius:16px;border:1px solid var(--line);background:url(shots/profiles-lock.png) no-repeat;background-size:${1600 * 0.95}px auto"></div>
+      </div>
+      <div class="abs card" id="y-2" style="left:710px;top:270px;width:500px;height:560px;padding:36px;display:grid;align-content:start;gap:16px">
+        <div style="font-size:70px">🚫</div><div style="font-size:36px;font-weight:700">Never fills</div>
+        <div style="display:grid;gap:14px;font-size:28px;font-weight:600">
+          <div class="nf">🔑 Passwords &amp; OTPs</div><div class="nf">💳 Card &amp; bank details</div><div class="nf">🤖 CAPTCHAs</div>
+        </div>
+      </div>
+      <div class="abs card" id="y-3" style="left:1260px;top:270px;width:500px;height:560px;padding:36px;display:grid;align-content:start;gap:16px">
+        <div style="font-size:70px">🙌</div><div style="font-size:36px;font-weight:700">You press Submit</div>
+        <div style="font-size:24px;color:var(--muted)">AwaazForm never submits a form. Always your choice.</div>
+        <div style="position:relative;margin-top:30px;justify-self:center">
+          <div style="padding:22px 60px;border-radius:16px;background:var(--violet);color:#fff;font-size:34px;font-weight:700">Submit</div>
+          <div id="y-hand" class="abs" style="font-size:64px;left:110px;top:30px">👆</div>
+        </div>
+      </div>`);
+    S.safety = { root: r, render(t) {
+      const c = TL.cues.safety, s = scene('safety');
+      vis($('#y-title', r), p(t, s.start, 0.5));
+      [['#y-1', c.device], ['#y-2', c.passwords], ['#y-3', c.submit]].forEach(([id, a]) => vis($(id, r), p(t, a - 0.2, 0.45), `translateY(${50 * (1 - p(t, a - 0.2, 0.6))}px)`));
+      $('#y-lock', r).style.backgroundPosition = `${-(R.lock_dialog.x * 0.95) + 12}px ${-(R.lock_dialog.y * 0.95) + 10}px`;
+      [...r.querySelectorAll('.nf')].forEach((n, i) => { const a = c.passwords + 0.35 + i * 0.35; n.style.opacity = p(t, a, 0.3); n.style.textDecoration = t > a + 0.4 ? 'line-through 4px #e5484d' : 'none'; });
+      vis($('#y-hand', r), p(t, c.yours, 0.4), `translateY(${-20 * Math.abs(Math.sin((t - c.yours) * 4))}px)`);
+      return { bolu: { x: 1835, y: 1000, s: 0.62, look: [-1, -0.6], shake: t > c.passwords && t < c.submit + 1.2 ? 1 : 0 } };
+    } };
+  }
+  // 10. accessibility
+  {
+    const items = [['big', '👆', 'Big buttons'], ['contrast', '◐', 'High contrast'], ['large', 'Aa', 'Large text'], ['hindi', 'अ', 'हिन्दी'], ['keyboard', '⌨️', 'Keyboard']];
+    const r = mkScene('access', `
+      <div class="abs display" id="a-title" style="left:0;right:0;top:96px;text-align:center;font-size:66px">Built for <span class="grad">everyone</span></div>
+      ${items.map(([k, ic, tx], i) => `<div class="tile" id="a-${k}" style="left:${150 + i * 330}px;top:250px;width:290px;height:250px"><div class="ic" style="font-family:Deva,Inter">${ic}</div><div style="font-family:Deva,Inter">${tx}</div></div>`).join('')}`);
+    const s1 = new Shot(r, { a: 'shots/session-contrast.png' }, 'High contrast · large text');
+    const s2 = new Shot(r, { a: 'shots/session-hindi.png' }, 'हिन्दी');
+    S.access = { root: r, render(t) {
+      const c = TL.cues.access, s = scene('access');
+      vis($('#a-title', r), p(t, s.start, 0.5));
+      items.forEach(([k], i) => { const a = c[k]; vis($('#a-' + k, r), p(t, a - 0.1, 0.35), `scale(${pop(t, a - 0.1)})`); });
+      s1.place(330, 530, 600, p(t, c.contrast, 0.5)); s1.show({ a: 1 }); s1.camera(t, [{ t: 0, r: R.question_card ?? null, z: 1.15 }]);
+      s2.place(990, 530, 600, p(t, c.hindi, 0.5)); s2.show({ a: 1 }); s2.camera(t, [{ t: 0, r: R.hindi_card ?? null, z: 1.15 }]);
+      return { bolu: { x: 1830, y: 1010, s: 0.7, look: [-1, -0.5], jump: t > c.everyone ? 16 * Math.abs(Math.sin((t - c.everyone) * 8)) : 0 } };
+    } };
+  }
+  // 11. outro (dark)
+  {
+    const r = mkScene('outro', `
+      <div class="abs logo" id="o-logo" style="left:0;right:0;top:260px;justify-content:center;font-size:84px;color:#fff;gap:26px">
+        <span class="m" style="width:110px;height:110px;border-radius:30px;gap:8px;padding:0 26px"><i style="height:30px;width:11px"></i><i style="height:56px;width:11px"></i><i style="height:36px;width:11px"></i></span>AwaazForm</div>
+      <div class="abs" id="o-tag" style="left:0;right:0;top:450px;text-align:center;font-size:60px;font-weight:650;letter-spacing:-0.03em;color:#fff">
+        <span id="o-w1">Your voice.</span> <span id="o-w2">Your form.</span> <span id="o-w3" class="grad">Your access.</span></div>
+      <div class="abs" id="o-team" style="left:0;right:0;top:580px;text-align:center;font-size:28px;color:rgba(255,255,255,.7)">CodeKweens · Katathon 6.0 · Problem Statement 402</div>`);
+    S.outro = { root: r, render(t) {
+      const c = TL.cues.outro, s = scene('outro');
+      vis($('#o-logo', r), p(t, s.start + 0.2, 0.6), `scale(${0.85 + 0.15 * pop(t, s.start + 0.2, 0.8)})`);
+      [['#o-w1', c.voice], ['#o-w2', c.form], ['#o-w3', c.access]].forEach(([id, a]) => vis($(id, r), p(t, a - 0.1, 0.4), `translateY(${24 * (1 - p(t, a - 0.1))}px)`));
+      $('#o-w1', r).style.display = $('#o-w2', r).style.display = $('#o-w3', r).style.display = 'inline-block';
+      vis($('#o-team', r), p(t, c.bye + 0.4, 0.6));
+      return { bolu: { x: 960, y: 1000, s: 1.15, wave: t > c.bye - 0.3 ? 1 : 0, look: [0, 0] } };
+    } };
+  }
+}
+
+// ---------------- background per scene ----------------
+const DARK = new Set(['live', 'outro']);
+function renderBg(t) {
+  // Dark amount blends across scene boundaries.
+  let dark = 0;
+  for (const s of TL.scenes) if (DARK.has(s.id)) dark = Math.max(dark, p(t, s.start - 0.2, 0.7, easeIO) * (1 - p(t, s.end - 0.4, 0.6, easeIO)));
+  $('#bg').style.background = `linear-gradient(180deg, rgb(${lerp(255, 21, dark)},${lerp(255, 23, dark)},${lerp(255, 24, dark)}) 0%, rgb(${lerp(246, 21, dark)},${lerp(247, 23, dark)},${lerp(249, 24, dark)}) 100%)`;
+  css($('#glowA'), { left: 900 + Math.sin(t * 0.21) * 260 + 'px', top: -420 + Math.cos(t * 0.17) * 120 + 'px', background: `radial-gradient(closest-side, rgba(98,77,227,${0.22 + dark * 0.35}), transparent)` });
+  css($('#glowB'), { left: -500 + Math.cos(t * 0.19) * 200 + 'px', top: 420 + Math.sin(t * 0.23) * 140 + 'px', background: `radial-gradient(closest-side, rgba(198,58,248,${0.14 + dark * 0.3}), transparent)` });
+  $('#brandText').style.color = dark > 0.5 ? '#fff' : 'var(--ink9)';
+  css($('#brand'), { opacity: TL.scenes.find((s) => s.id === 'outro').start - 0.3 < t ? 0 : 1 });
+  return dark;
+}
+
+// ---------------- captions ----------------
+function renderCaption(t, dark) {
+  const cap = $('#cap');
+  const l = TL.lines.find((x) => t >= x.start - 0.15 && t <= x.end + 0.35);
+  if (!l || TL.scenes.find((s) => s.id === 'outro').lineStart <= t + 0.15) { cap.style.opacity = 0; return; }
+  const k = clamp((t - l.start) / (l.end - l.start));
+  const n = Math.round(l.text.length * k);
+  cap.innerHTML = `${l.voice === 'user' ? '<span class="who">You:</span>' : ''}${l.text.slice(0, n)}<span class="dim">${l.text.slice(n)}</span>`;
+  cap.style.opacity = clamp((t - (l.start - 0.15)) / 0.2) * clamp((l.end + 0.35 - t) / 0.2);
+  cap.style.background = dark > 0.5 ? 'rgba(255,255,255,.12)' : 'rgba(21,23,24,.86)';
+}
+
+// ---------------- main render ----------------
+let lastPose = null;
+window.renderFrame = (t) => {
+  const dark = renderBg(t);
+  let pose = null;
+  for (const s of TL.scenes) {
+    const sc = S[s.id];
+    const fadeIn = s.start === 0 ? 1 : p(t, s.start, 0.45, easeIO), fadeOut = 1 - p(t, s.end - 0.05, 0.45, easeIO);
+    const o = fadeIn * fadeOut;
+    sc.root.style.opacity = o;
+    sc.root.style.visibility = o > 0.001 ? 'visible' : 'hidden';
+    if (o > 0.001) {
+      const res = sc.render(t);
+      // Bolu glides between scene poses.
+      if (t >= s.start) {
+        const prev = TL.scenes[TL.scenes.indexOf(s) - 1];
+        const k = prev ? p(t, s.start, 0.9, easeIO) : 1;
+        if (prev && k < 1 && lastPose) {
+          const a = S[prev.id].render(t).bolu, b = res.bolu;
+          pose = { ...b, x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), s: lerp(a.s ?? 1, b.s ?? 1, k) };
+        } else pose = res.bolu;
+      }
+    }
+  }
+  if (pose) { setBolu(t, pose); lastPose = pose; }
+  renderCaption(t, dark);
+};
+
+window.ready = (async () => {
+  TL = await (await fetch('timeline.json')).json();
+  R = await (await fetch('shots/regions.json')).json();
+  bolu.el = $('#bolu'); bolu.el.innerHTML = BOLU;
+  buildScenes();
+  // The real example form from example_forms/, rendered with pdf.js.
+  const pdfjs = await import('/node_modules/pdfjs-dist/build/pdf.min.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.mjs';
+  const doc = await pdfjs.getDocument({ url: '/form6.pdf' }).promise;
+  const pg = await doc.getPage(1), vp = pg.getViewport({ scale: 3 });
+  const cv = $('#p-canvas'); cv.width = vp.width; cv.height = vp.height;
+  await pg.render({ canvas: cv, viewport: vp }).promise;
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
+  window.renderFrame(0);
+  return { duration: TL.duration, fps: TL.fps };
+})();
+
+// Preview: ?t=12.5 renders one frame; ?play plays in real time with audio.
+const qs = new URLSearchParams(location.search);
+window.ready.then(() => {
+  if (qs.has('t')) window.renderFrame(Number(qs.get('t')));
+  if (qs.has('play')) {
+    const a = new Audio('audio/master.wav'); a.play();
+    const loop = () => { window.renderFrame(a.currentTime); if (!a.ended) requestAnimationFrame(loop); };
+    loop();
+  }
+});
+</script>
+</body>
+</html>

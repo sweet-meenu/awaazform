@@ -1,0 +1,73 @@
+﻿{
+  "voices": {
+    "bolu": "Heera",
+    "user": "Ravi"
+  },
+  "lines": [
+    {
+      "id": "intro",
+      "voice": "bolu",
+      "text": "Hi! I'm Bolu, the little helper inside AwaazForm."
+    },
+    {
+      "id": "problem",
+      "voice": "bolu",
+      "text": "Forms are everywhere. But tiny boxes, confusing words and lots of typing make them hard for many people, especially if you can't see well, can't type easily, or prefer Hindi."
+    },
+    {
+      "id": "idea",
+      "voice": "bolu",
+      "text": "AwaazForm lets you fill forms, just by talking. Your voice. Your form. Your access."
+    },
+    {
+      "id": "loop",
+      "voice": "bolu",
+      "text": "Every answer goes through the Confidence Loop. I listen, I write down what you said, I check it, and I read it back to you. Nothing is filled until you say yes."
+    },
+    {
+      "id": "ask",
+      "voice": "bolu",
+      "text": "Let's try it. What is your date of birth?"
+    },
+    {
+      "id": "answer",
+      "voice": "user",
+      "text": "Twelve March, nineteen seventy eight."
+    },
+    {
+      "id": "readback",
+      "voice": "bolu",
+      "text": "I understand that as the twelfth of March, nineteen seventy eight, and ask: is this right? When you confirm, watch me type it in. Then I double check that it really landed."
+    },
+    {
+      "id": "timeline",
+      "voice": "bolu",
+      "text": "Every step I take shows up in the activity list, in plain words. No hidden actions, ever."
+    },
+    {
+      "id": "pdf",
+      "voice": "bolu",
+      "text": "Got a printed PDF, like this voter registration form? Upload it. It never leaves your browser. I find the questions, you nudge the boxes into place, and I fill it in. I even tick the right box."
+    },
+    {
+      "id": "live",
+      "voice": "bolu",
+      "text": "Want to go hands free? Turn on Live Mode and simply talk. Say yes to confirm, next to move on, or interrupt me any time."
+    },
+    {
+      "id": "safety",
+      "voice": "bolu",
+      "text": "Your saved details stay on your device, locked with a passphrase if you like. I never fill passwords or payments, and I never press submit. That choice is always yours."
+    },
+    {
+      "id": "access",
+      "voice": "bolu",
+      "text": "Big buttons, high contrast, large text, Hindi, and full keyboard control. Built for everyone."
+    },
+    {
+      "id": "outro",
+      "voice": "bolu",
+      "text": "AwaazForm. Your voice. Your form. Your access. Bye bye!"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>encoder</title>
+<script src="/node_modules/mp4-muxer/build/mp4-muxer.js"></script></head>
+<body>
+<script>
+// H.264 + AAC encoding with the browser's WebCodecs, muxed to MP4 with mp4-muxer (pure JS).
+let muxer, venc, aenc, W, H, FPS, errors = [];
+
+window.setup = async (w, h, fps) => {
+  W = w; H = h; FPS = fps;
+  muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+    audio: { codec: 'aac', numberOfChannels: 2, sampleRate: 48000 },
+    fastStart: 'in-memory',
+  });
+  venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => errors.push(String(e)) });
+  venc.configure({ codec: 'avc1.640028', width: W, height: H, bitrate: 12_000_000, framerate: FPS, latencyMode: 'quality', avc: { format: 'avc' } });
+  aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => errors.push(String(e)) });
+  aenc.configure({ codec: 'mp4a.40.2', sampleRate: 48000, numberOfChannels: 2, bitrate: 192_000 });
+};
+
+window.addFrame = async (b64, i) => {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' }));
+  const frame = new VideoFrame(bmp, { timestamp: Math.round((i * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+  venc.encode(frame, { keyFrame: i % (FPS * 2) === 0 });
+  frame.close(); bmp.close();
+  while (venc.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 2));
+  return errors.length ? errors.join('; ') : null;
+};
+
+window.addAudio = async (url) => {
+  const buf = new DataView(await (await fetch(url)).arrayBuffer());
+  let off = 12, dataOff = 0, dataLen = 0;
+  while (off < buf.byteLength) {
+    const id = String.fromCharCode(buf.getUint8(off), buf.getUint8(off + 1), buf.getUint8(off + 2), buf.getUint8(off + 3));
+    const size = buf.getUint32(off + 4, true);
+    if (id === 'data') { dataOff = off + 8; dataLen = size; break; }
+    off += 8 + size + (size % 2);
+  }
+  const n = dataLen / 4, CH = 1024;
+  for (let s = 0; s < n; s += CH) {
+    const len = Math.min(CH, n - s), planar = new Float32Array(len * 2);
+    for (let i = 0; i < len; i++) {
+      planar[i] = buf.getInt16(dataOff + (s + i) * 4, true) / 32768;
+      planar[len + i] = buf.getInt16(dataOff + (s + i) * 4 + 2, true) / 32768;
+    }
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: len, numberOfChannels: 2, timestamp: Math.round((s * 1e6) / 48000), data: planar });
+    aenc.encode(ad); ad.close();
+    if (aenc.encodeQueueSize > 50) await aenc.flush();
+  }
+};
+
+window.finish = async (uploadUrl) => {
+  await venc.flush(); await aenc.flush();
+  muxer.finalize();
+  // Upload in 8 MB chunks: one huge request body overflows the DevTools pipe that Playwright reads.
+  const buf = muxer.target.buffer, CHUNK = 8 * 1024 * 1024;
+  let ok = true;
+  for (let o = 0; o < buf.byteLength; o += CHUNK) {
+    const res = await fetch(uploadUrl + (o ? '?append=1' : ''), { method: 'PUT', body: buf.slice(o, o + CHUNK) });
+    ok = ok && res.ok;
+  }
+  return { ok, bytes: buf.byteLength, errors };
+};
+</script>
+</body></html>
