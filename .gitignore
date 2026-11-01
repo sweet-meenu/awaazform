@@ -1,0 +1,18 @@
+node_modules
+.next
+dist
+.env
+.env.local
+*.tsbuildinfo
+coverage
+.turbo
+.vercel
+apps/web/public/pdf.worker.min.mjs
+
+# Generated media (rebuild with media/README.md)
+media/explainer/out/
+media/explainer/audio/master.wav
+
+# Local agent tooling
+.agents/
+skills-lock.json
