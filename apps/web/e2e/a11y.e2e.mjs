@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const AXE = require.resolve('axe-core/axe.min.js');
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
-const ROUTES = ['/', '/session', '/pdf', '/report', '/profiles', '/settings', '/privacy'];
+const ROUTES = ['/', '/session', '/form', '/pdf', '/report', '/profiles', '/settings', '/privacy'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL ?? 'msedge', headless: true });

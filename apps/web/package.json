@@ -8,7 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "echo \"web: no unit tests yet\"",
-    "test:e2e": "node e2e/session.e2e.mjs && node e2e/pdf.e2e.mjs",
+    "test:e2e": "node e2e/session.e2e.mjs && node e2e/pdf.e2e.mjs && node e2e/gform.e2e.mjs",
     "predev": "node scripts/copy-pdf-worker.mjs",
     "prebuild": "node scripts/copy-pdf-worker.mjs",
     "test:a11y": "node e2e/a11y.e2e.mjs"
