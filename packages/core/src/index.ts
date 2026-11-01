@@ -11,3 +11,4 @@ export * from './profile';
 export * from './fixtures';
 export * from './prompts';
 export * from './commands';
+export * from './google';

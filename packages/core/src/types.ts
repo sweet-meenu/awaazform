@@ -9,7 +9,7 @@ export type FieldType =
 export interface PdfBox { x: number; y: number; w: number; h: number }
 
 export type FormSource =
-  | { kind: 'google-form'; url: string; formId: string }
+  | { kind: 'google-form'; url: string; formId: string; entryId: string }
   | { kind: 'pdf-acroform'; fileName: string; fieldName: string }
   | { kind: 'pdf-flat'; fileName: string; page: number; box: PdfBox; optionBoxes?: Record<string, PdfBox>; uppercase?: boolean }
   | { kind: 'fixture'; name: string };
