@@ -37,6 +37,8 @@ Bolu **listens**, **writes down** what you said, **checks** it, and **reads it b
 
 ## What it does
 
+**Paste any Google Form link.** AwaazForm reads the public form, you answer each question by voice or text, and **Open in Google Forms** opens the real form with your confirmed answers already filled in, across every section. You check it and press Submit. No extension, no install, and it works on phones.
+
 <table>
   <tr>
     <td width="50%"><img src="docs/media/pdf.png" alt="PDF question review" /><br /><b>Printed PDFs too.</b> AI finds the questions, you nudge the boxes into place, AwaazForm writes the answers and ticks the boxes. The file never leaves your browser.</td>
@@ -73,7 +75,7 @@ Without a key the app still works: you type your answers, and read-back uses the
 | Command | Purpose |
 |---|---|
 | `pnpm test` | Core unit tests (Vitest) |
-| `pnpm --filter web test:e2e` | Session and PDF end-to-end tests (needs a running server) |
+| `pnpm --filter web test:e2e` | Session, PDF and Google Form end-to-end tests (needs a running server) |
 | `pnpm --filter web test:a11y` | axe-core WCAG 2.2 AA audit |
 
 ## Deploy on Vercel
@@ -84,16 +86,16 @@ Live at **[awaazform.vercel.app](https://awaazform.vercel.app)**. To deploy your
 
 ```
 packages/core   types, validators, safety rules, session reducer, confirm gate, tool runner
-apps/web        Next.js app: session, PDF, profiles, report, settings, API routes
+apps/web        Next.js app: session, Google Form link, PDF, profiles, report, settings, API routes
 media           the explainer video, rendered from code (see media/README.md)
 example_forms   real test forms (ECI Form 6)
 ```
 
 ## Status
 
-**Working:** the demo form session, fillable and printed PDFs, Live Mode, profiles, the readiness report, and the English and Hindi interface. axe-core reports no critical or serious violations on any route.
+**Working:** the demo form session, Google Forms by link, fillable and printed PDFs, Live Mode, profiles, the readiness report, and the English and Hindi interface. axe-core reports no critical or serious violations on any route.
 
-**Not yet:** the Chrome extension for live Google Forms, Devanagari text inside PDFs, and a manual screen-reader pass.
+**Not yet:** other form builders by link, Devanagari text inside PDFs, and a manual screen-reader pass. Google Forms that need a sign-in, and grid, file-upload and "Other" answers, are left for you to complete on the form.
 
 **Out of scope by design:** auto-submit, logins, payments, CAPTCHAs, sites other than Google Forms, and scanned PDFs.
 
