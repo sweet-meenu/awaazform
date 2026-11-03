@@ -1,8 +1,9 @@
-// End-to-end smoke test of the typed Confidence Loop against a running server.
+// End-to-end smoke test of the typed Confidence Loop on /form, with a mocked Google Form.
 // Usage: BASE_URL=http://localhost:3000 SHOTS=./shots node e2e/session.e2e.mjs
 // Uses an installed Chrome/Edge through playwright-core (no browser download).
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
+import { startMockSession } from './mock-gform.mjs';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const SHOTS = process.env.SHOTS;
@@ -25,10 +26,7 @@ try {
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'no horizontal overflow');
   await shot('landing', true);
 
-  await page.goto(`${BASE}/session`);
-  await page.evaluate(() => { localStorage.clear(); indexedDB.deleteDatabase('awaazform'); });
-  await page.reload();
-  await page.getByRole('heading', { name: 'Ready when you are' }).waitFor();
+  await startMockSession(page, BASE);
   await shot('scanner');
 
   // Mute speech for the test run.
@@ -102,7 +100,7 @@ try {
   await shot('report', true);
 
   // Submit is never activated: replica's Submit is disabled (AC-05 for the replica).
-  await page.goto(`${BASE}/session`);
+  await page.goto(`${BASE}/form`);
   assert.equal(await page.frameLocator('iframe').getByRole('button', { name: 'Submit' }).isDisabled(), true);
 
   const csp = problems.filter((p) => /Content Security Policy|Refused to/.test(p));

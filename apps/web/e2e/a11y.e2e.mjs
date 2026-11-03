@@ -3,11 +3,12 @@
 // Automated checks find only part of the problems: a manual keyboard and screen-reader pass is still needed.
 import { chromium } from 'playwright-core';
 import { createRequire } from 'node:module';
+import { startMockSession } from './mock-gform.mjs';
 
 const require = createRequire(import.meta.url);
 const AXE = require.resolve('axe-core/axe.min.js');
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
-const ROUTES = ['/', '/session', '/form', '/pdf', '/report', '/profiles', '/settings', '/privacy'];
+const ROUTES = ['/', '/form', '/pdf', '/report', '/profiles', '/settings', '/privacy'];
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL ?? 'msedge', headless: true });
@@ -43,9 +44,7 @@ for (const contrast of ['normal', 'high']) {
     console.log(`${contrast.padEnd(6)} ${label.padEnd(22)} ${res.violations.length === 0 ? '✓ no violations' : ''}`);
     for (const v of res.violations) console.log(`      ${v.impact?.toUpperCase()} ${v.id}: ${v.help} → ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(', ')}`);
   };
-  await page.goto(`${BASE}/session`);
-  await page.evaluate(() => localStorage.removeItem('awaazform.session'));
-  await page.reload();
+  await startMockSession(page, BASE, { contrast });
   await page.getByRole('button', { name: 'Read aloud' }).click();
   await page.getByRole('button', { name: /^Start, filling for/ }).click();
   await audit('session: question');

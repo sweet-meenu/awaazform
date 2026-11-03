@@ -53,9 +53,9 @@ try {
     await page.getByLabel('Your answer').fill(text);
     await page.getByRole('button', { name: 'Check answer' }).click();
     await page.getByText('Is this right?').first().waitFor();
-    assert.match(await open.getAttribute('aria-label'), new RegExp(`with ${i} confirmed`), 'unconfirmed answers are not in the link');
+    assert.ok(await page.getByRole('link', { name: new RegExp(`Open in Google Forms ${i} confirmed`) }).isVisible(), 'unconfirmed answers are not in the link');
     await page.getByRole('button', { name: /Confirm/ }).click();
-    await page.getByRole('link', { name: new RegExp(`with ${i + 1} confirmed`) }).waitFor({ timeout: 15_000 });
+    await page.getByRole('link', { name: new RegExp(`Open in Google Forms ${i + 1} confirmed`) }).waitFor({ timeout: 15_000 });
     await page.waitForTimeout(300);
     const remember = page.getByText(/Remember for next time/).first();
     if (await remember.isVisible().catch(() => false)) await page.getByRole('button', { name: 'No', exact: true }).click();
