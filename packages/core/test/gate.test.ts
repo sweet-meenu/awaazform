@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  buildReport, createSession, DEMO_FORM, DEMO_FORM_TITLE, SessionController, ToolRunner,
+  buildReport, createSession, SessionController, ToolRunner,
   type FieldWriter, type SessionEvent, type ToolHost,
 } from '../src';
+import { DEMO_FORM, DEMO_FORM_TITLE } from './fixtures';
 
 function setup(writerOverride?: Partial<FieldWriter>) {
   const store = new Map<string, string>();

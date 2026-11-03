@@ -3,13 +3,12 @@
 import type { Session } from '@awaazform/core';
 
 // FR-22: sessions survive reload via localStorage, and can be discarded.
-// Each source (demo form, a PDF, a Google Form) has its own key; the report shows the most recent one.
-export const DEMO_KEY = 'awaazform.session';
+// Each source (a Google Form, a PDF) has its own key; the report shows the most recent one.
 export const PDF_KEY = 'awaazform.session.pdf';
 export const GFORM_KEY = 'awaazform.session.gform';
 const LAST = 'awaazform.session.last';
 
-export function loadSession(key: string = DEMO_KEY): Session | null {
+export function loadSession(key: string): Session | null {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
@@ -22,15 +21,15 @@ export function loadSession(key: string = DEMO_KEY): Session | null {
   }
 }
 
-export function saveSession(s: Session, key: string = DEMO_KEY) {
+export function saveSession(s: Session, key: string) {
   localStorage.setItem(key, JSON.stringify(s));
   localStorage.setItem(LAST, key);
 }
 
 export function loadLastSession(): Session | null {
-  return loadSession(localStorage.getItem(LAST) ?? DEMO_KEY);
+  return loadSession(localStorage.getItem(LAST) ?? GFORM_KEY);
 }
 
-export function discardSession(key: string = DEMO_KEY) {
+export function discardSession(key: string) {
   localStorage.removeItem(key);
 }

@@ -10,7 +10,7 @@ import { loadLastSession } from '@/lib/session-store';
 export default function ReportPage() {
   const [report, setReport] = useState<ReadinessReport | null | undefined>(undefined);
   const [copied, setCopied] = useState(false);
-  const [base, setBase] = useState('/session');
+  const [base, setBase] = useState('/form');
 
   useEffect(() => {
     const s = loadLastSession();
@@ -24,7 +24,7 @@ export default function ReportPage() {
       <div className="container-x py-16 text-center">
         <h1 className="text-3xl">No session yet</h1>
         <p className="mt-2 text-muted">Start a session to see what is ready and what still needs attention.</p>
-        <Link href="/session" className="btn mt-6">Start a session</Link>
+        <Link href="/form" className="btn mt-6">Fill a Google Form</Link>
       </div>
     );
   }
@@ -89,7 +89,7 @@ function Group({ title, items, tone, base }: { title: string; items: ReportItem[
               {i.value && <span className="text-muted"> · {i.value}</span>}
               {i.note && <span className="block text-xs text-muted">{i.note}</span>}
             </span>
-            {tone !== 'ok' && <Link href={base === '/session' ? `/session?q=${i.index}` : base} className="text-sm underline underline-offset-4 print:hidden">Go to question</Link>}
+            {tone !== 'ok' && <Link href={base === '/form' ? `/form?q=${i.index}` : base} className="text-sm underline underline-offset-4 print:hidden">Go to question</Link>}
           </li>
         ))}
       </ul>

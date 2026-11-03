@@ -38,7 +38,6 @@ export function Nav() {
   if (path?.startsWith('/replica')) return null;
 
   const links = [
-    { href: '/session', label: t.nav_session },
     { href: '/form', label: t.nav_form },
     { href: '/pdf', label: t.nav_pdf },
     { href: '/report', label: t.nav_report },

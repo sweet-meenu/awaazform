@@ -61,8 +61,8 @@ export default function Home() {
             </p>
           </Reveal>
           <Reveal delay={0.24} className="flex flex-wrap justify-center gap-3">
-            <Link href="/session" className="btn">Try the demo form</Link>
-            <Link href="/form" className="btn btn-ghost">Paste a Google Form link</Link>
+            <Link href="/form" className="btn">Fill a Google Form</Link>
+            <Link href="/pdf" className="btn btn-ghost">Fill a PDF</Link>
           </Reveal>
         </div>
 
@@ -167,10 +167,10 @@ export default function Home() {
       <section className="py-24 text-center md:py-32">
         <div className="container-x grid justify-items-center gap-8">
           <Reveal><span style={{ color: 'var(--accent)' }}><Wave bars={24} /></span></Reveal>
-          <Reveal delay={0.08}><h2 className="max-w-[520px] text-[clamp(2rem,4vw,2.75rem)]">Start with the<br />demo form today.</h2></Reveal>
+          <Reveal delay={0.08}><h2 className="max-w-[520px] text-[clamp(2rem,4vw,2.75rem)]">Bring your form.<br />Fill it by voice.</h2></Reveal>
           <Reveal delay={0.16} className="flex flex-wrap justify-center gap-3">
-            <Link href="/session" className="btn">Try the demo form</Link>
-            <Link href="/form" className="btn btn-ghost">Paste a Google Form link</Link>
+            <Link href="/form" className="btn">Fill a Google Form</Link>
+            <Link href="/pdf" className="btn btn-ghost">Fill a PDF</Link>
           </Reveal>
         </div>
       </section>

@@ -8,7 +8,6 @@ export * from './tools';
 export * from './runner';
 export * from './report';
 export * from './profile';
-export * from './fixtures';
 export * from './prompts';
 export * from './commands';
 export * from './google';

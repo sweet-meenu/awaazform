@@ -3,7 +3,6 @@ import type { Language } from '@awaazform/core';
 // FR-49: interface strings in English and Hindi.
 const en = {
   skip: 'Skip to main content',
-  nav_session: 'Start',
   nav_form: 'Google Form',
   nav_pdf: 'PDF',
   nav_profiles: 'Profiles',
@@ -47,7 +46,6 @@ const en = {
 
 const hi: typeof en = {
   skip: 'मुख्य सामग्री पर जाएँ',
-  nav_session: 'शुरू करें',
   nav_form: 'गूगल फ़ॉर्म',
   nav_pdf: 'PDF',
   nav_profiles: 'प्रोफ़ाइल',

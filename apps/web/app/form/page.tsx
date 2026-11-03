@@ -13,7 +13,7 @@ interface ScannedForm { formId: string; title: string; description: string; ques
 type Step =
   | { s: 'paste'; error?: string; url?: string }
   | { s: 'reading'; url: string }
-  | { s: 'fill'; session: Session; resumed: boolean };
+  | { s: 'fill'; session: Session; resumed: boolean; jump?: number };
 
 /** Google Forms by link: scan the public form, fill the replica, hand back a pre-filled link. */
 export default function FormPage() {
@@ -41,7 +41,10 @@ export default function FormPage() {
     if (url) return void scan(url);
     const saved = loadSession(GFORM_KEY);
     if (!saved) return setStep({ s: 'paste' });
-    setStep({ s: 'fill', session: saved, resumed: Object.values(saved.answers).some((a) => a.status !== 'pending') });
+    const resumed = Object.values(saved.answers).some((a) => a.status !== 'pending');
+    const q = new URLSearchParams(window.location.search).get('q');
+    const jump = q === null ? NaN : Number(q);
+    setStep({ s: 'fill', session: saved, resumed, jump: resumed && Number.isInteger(jump) && jump >= 0 && jump < saved.questions.length ? jump : undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -54,6 +57,7 @@ export default function FormPage() {
         initial={step.session}
         storageKey={GFORM_KEY}
         startImmediately={step.resumed}
+        jumpTo={step.jump}
         sourceLabel="Google Form"
         surfaceLabel="Form"
         surfaceRef={surfaceRef}
@@ -77,9 +81,10 @@ function OpenInGoogle({ session }: { session: Session }) {
   const href = googlePrefillUrl(session);
   if (!href) return null;
   return (
-    <a className={ready ? 'btn' : 'btn btn-ghost'} href={href} target="_blank" rel="noopener noreferrer"
-      aria-label={`Open in Google Forms with ${ready} confirmed answer${ready === 1 ? '' : 's'} (opens in a new tab)`}>
-      Open in Google Forms <span className="chip !min-h-0 !px-2 !py-0 !text-xs">{ready}</span> <span aria-hidden>↗</span>
+    <a className={ready ? 'btn' : 'btn btn-ghost'} href={href} target="_blank" rel="noopener noreferrer">
+      Open in Google Forms
+      <span className="chip !min-h-0 !px-2 !py-0 !text-xs">{ready}<span className="sr-only"> confirmed answer{ready === 1 ? '' : 's'}</span></span>
+      <span aria-hidden>↗</span><span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }

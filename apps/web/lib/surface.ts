@@ -1,7 +1,7 @@
 import type { FieldWriter, FormQuestion, Session, SessionEvent } from '@awaazform/core';
 
 /**
- * Where a session's fills land and animate: the replica iframe (demo / Google Form preview)
+ * Where a session's fills land and animate: the replica iframe (Google Form preview)
  * or a PDF preview. The workspace drives it; the surface owns the real writes and read-backs.
  */
 export interface SurfaceHandle extends FieldWriter {

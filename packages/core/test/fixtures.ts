@@ -1,6 +1,5 @@
-// Demo form mirroring the §12 test Google Form, used by the web demo and tests.
-import { classifySupport, type RawControl } from './safety';
-import type { FormQuestion } from './types';
+// Test form mirroring the §12 test Google Form.
+import { classifySupport, type FormQuestion, type RawControl } from '../src';
 
 const src = { kind: 'fixture', name: 'demo' } as const;
 
