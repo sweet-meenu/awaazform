@@ -93,7 +93,7 @@ example_forms   real test forms (ECI Form 6)
 
 ## Status
 
-**Working:** the demo form session, Google Forms by link, fillable and printed PDFs, Live Mode, profiles, the readiness report, and the English and Hindi interface. axe-core reports no critical or serious violations on any route.
+**Working:** Google Forms by link, fillable and printed PDFs, Live Mode, profiles, the readiness report, and the English and Hindi interface. axe-core reports no critical or serious violations on any route.
 
 **Not yet:** other form builders by link, Devanagari text inside PDFs, and a manual screen-reader pass. Google Forms that need a sign-in, and grid, file-upload and "Other" answers, are left for you to complete on the form.
 

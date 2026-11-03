@@ -24,8 +24,8 @@ All UI follows the Specify-derived theme. Never hard-code colours, radii, shadow
 
 ## Structure
 
-- `packages/core`: shared types, normalizers, validators, safety rules, session reducer, controller (confirm gate), tool runner, report, profile crypto, demo fixture. Tests in `test/`.
-- `apps/web`: Next.js 16 app. Routes: `/`, `/session`, `/form` (Google Form by link), `/pdf`, `/replica` (iframe animation surface), `/report`, `/profiles`, `/settings`, `/privacy`, `/api/{chat,stt,tts,extract,gform}`.
+- `packages/core`: shared types, normalizers, validators, safety rules, session reducer, controller (confirm gate), tool runner, report, profile crypto, Google Forms parsing and pre-fill. Tests and the test form fixture are in `test/`.
+- `apps/web`: Next.js 16 app. Routes: `/`, `/form` (Google Form by link), `/pdf`, `/replica` (iframe animation surface), `/report`, `/profiles`, `/settings`, `/privacy`, `/api/{chat,stt,tts,extract,gform}`.
   - `components/SessionWorkspace.tsx` is the one session UI (question card, read-back/confirm, Live Mode, stepper, Form/Activity tabs). Sources plug in a `SurfaceHandle` (`lib/surface.ts`): `ReplicaSurface` for forms, `PdfSurface` for PDFs.
   - `/form` scans a public Google Form (`/api/gform`, host allow-listed) and hands back a pre-filled link via `googlePrefillUrl` in `packages/core/src/google.ts`. Only verified answers go in the link; the user submits on Google.
   - `lib/pdf.ts` handles PDF analysis, box placement and filling; `lib/live.ts` is Live Mode's voice detection; `lib/vault.ts` holds profile passphrase keys (in memory only).
