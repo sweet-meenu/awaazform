@@ -80,12 +80,12 @@ This branch (`alternate`) is built as a **static site** (Next.js `output: 'expor
 ```bash
 corepack enable && pnpm install
 cd backend && uv sync && cp .env.example .env && cd ..   # add your GROQ_API_KEY to backend/.env
-(cd backend && uv run python -m app.download)            # optional: fetch every local voice now (~2 GB)
+(cd backend && uv run python -m app.download)            # optional: fetch the Kokoro voice now (~340 MB)
 pnpm demo                                                # build the site, then ONE server: http://localhost:3000
 pnpm dev:all                                             # while editing: next dev :3000 (hot reload) + API :8000
 ```
 
-Speech output runs **on your machine**: Kokoro for English and Hindi, Meta's MMS-TTS for Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Malayalam, Punjabi and Assamese (Nepali uses the Hindi voice). Every device then hears the same voice, even browsers with no Indian-language voices. Speech-to-text, the assistant and question translation still use Groq. Without a key the app still works: you type your answers, and read-back uses the local voices.
+Languages: **English, Hindi and Marathi**. Bolu speaks with the device's own voice when it has a good one (instant), otherwise with Kokoro on your machine (Marathi through its Hindi voice). It listens with the browser's own recognition in Chrome and Edge (you see the words as you speak), and with Groq Whisper elsewhere. The assistant and question translation use Groq. Without a key the app still works: you type your answers, and read-back uses the local voices.
 
 For a demo, set `TTS_PRELOAD` in `backend/.env` to the languages you will show, so they are loaded at startup. `GET /api/health` lists what is ready.
 

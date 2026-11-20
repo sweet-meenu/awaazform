@@ -41,5 +41,5 @@ MODELS_DIR = Path(os.environ.get("MODELS_DIR", BACKEND / "models"))
 KOKORO_MODEL = os.environ.get("KOKORO_MODEL", "kokoro-v1.0.onnx")  # or kokoro-v1.0.int8.onnx (smaller, faster)
 KOKORO_VOICE_EN = os.environ.get("KOKORO_VOICE_EN", "af_heart")
 KOKORO_VOICE_HI = os.environ.get("KOKORO_VOICE_HI", "hf_alpha")
-TTS_PRELOAD = [s.strip() for s in os.environ.get("TTS_PRELOAD", "en,hi").split(",") if s.strip()]
+TTS_PRELOAD = [s.strip() for s in os.environ.get("TTS_PRELOAD", "en,hi,mr").split(",") if s.strip()]
 TTS_THREADS = _int("TTS_THREADS", max(1, (os.cpu_count() or 4) // 2))

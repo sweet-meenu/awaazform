@@ -147,3 +147,46 @@ describe('Live Mode turn-taking helpers', () => {
     expect(quickValue('paragraph', 'Great teachers')).toBeNull();
   });
 });
+
+describe('emails and names, as Indians say them', async () => {
+  const { extractEmail, fixEmailDomain, emailUsername, spokenEmail, cleanSpokenAnswer, quickValue } = await import('../src');
+  it('reads spoken emails in English, Hindi and Marathi', () => {
+    expect(extractEmail('my email is ayush shukla at the rate gmail dot com')).toBe('ayushshukla@gmail.com');
+    expect(extractEmail('ayush dot shukla at gmail')).toBe('ayush.shukla@gmail.com');
+    expect(extractEmail('a for apple y u s h 98 at gmail.com')).toBe('ayush98@gmail.com');
+    expect(extractEmail('double a r t i at yahoo dot com')).toBe('aarti@yahoo.com');
+    expect(extractEmail('मेरा ईमेल ayush एट द रेट जीमेल डॉट कॉम है')).toBe('ayush@gmail.com');
+    expect(extractEmail('ayush shukla gmail dot com')).toBe('ayushshukla@gmail.com'); // no "at" heard
+    expect(extractEmail('Emsra edry')).toBeNull();
+  });
+  it('fixes common domain slips', () => {
+    expect(fixEmailDomain('ayush@gmial.com')).toBe('ayush@gmail.com');
+    expect(fixEmailDomain('ayush@gmail.co')).toBe('ayush@gmail.com');
+    expect(fixEmailDomain('ayush@gmail.con')).toBe('ayush@gmail.com');
+    expect(fixEmailDomain('ayush@college.edu.in')).toBe('ayush@college.edu.in');
+    expect(cleanSpokenAnswer('email', 'ayush@gmial.com')).toBe('ayush@gmial.com'); // typed as is; the read-back shows it
+  });
+  it('keeps a username said on its own, so the provider can be asked', () => {
+    expect(emailUsername('ayush shukla')).toBe('ayushshukla');
+    expect(emailUsername('a y u s h 9 8')).toBe('ayush98');
+    expect(emailUsername('my email is ayush underscore shukla')).toBe('ayush_shukla');
+    expect(emailUsername('ayush at gmail dot com')).toBeNull();
+  });
+  it('recognises a provider named on its own', async () => {
+    const { emailProvider } = await import('../src');
+    expect(emailProvider('Gmail')).toBe('gmail.com');
+    expect(emailProvider('जीमेल')).toBe('gmail.com');
+    expect(emailProvider('yahoo dot com')).toBe('yahoo.com');
+    expect(emailProvider('my name is Ayush')).toBeNull();
+  });
+  it('reads emails back letter by letter', () => {
+    expect(spokenEmail('ayush.s@gmail.com')).toBe('a y u s h dot s, at gmail dot com');
+  });
+  it('takes names out of sentences in all three languages, without the AI when clear', () => {
+    expect(quickValue('text', 'majhe naav Ayush aahe', 'mr', 'Name of the Student')).toBe('Ayush');
+    expect(quickValue('text', 'mera naam Ayush Shukla hai', 'hi', 'Full name')).toBe('Ayush Shukla');
+    expect(quickValue('text', 'Ayush Shukla', 'hi', 'Full name')).toBe('Ayush Shukla');
+    expect(quickValue('text', 'Magenah O Ayush Aye', 'mr', 'Name of the Student')).toBeNull(); // unclear: AI
+    expect(quickValue('text', 'Borivali East', 'mr', 'Address')).toBeNull(); // not a name: AI corrects places
+  });
+});

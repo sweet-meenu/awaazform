@@ -4,17 +4,7 @@ import type { AnswerStatus, FormQuestion, Language } from './types';
 export const LANGUAGE_NAMES: Record<Language, string> = {
   en: 'English',
   hi: 'Hindi (Devanagari script)',
-  bn: 'Bengali (Bengali script)',
   mr: 'Marathi (Devanagari script)',
-  te: 'Telugu (Telugu script)',
-  ta: 'Tamil (Tamil script)',
-  gu: 'Gujarati (Gujarati script)',
-  ur: 'Urdu (Perso-Arabic script)',
-  kn: 'Kannada (Kannada script)',
-  ml: 'Malayalam (Malayalam script)',
-  pa: 'Punjabi (Gurmukhi script)',
-  as: 'Assamese (Assamese script)',
-  ne: 'Nepali (Devanagari script)',
 };
 
 export function systemPrompt(opts: { formTitle: string; profileLabel: string; language: Language }): string {

@@ -193,7 +193,7 @@ function deviceVoicesReady(): Promise<void> {
 }
 
 /** Languages without their own voice can borrow one that reads the same script. */
-const BORROW: Partial<Record<Language, string>> = { mr: 'hi', ne: 'hi', as: 'bn' };
+const BORROW: Partial<Record<Language, string>> = { mr: 'hi' };
 
 /** eSpeak (the default voices on many Linux systems) is robotic; our server voices sound far better. */
 const ROBOTIC = /espeak/i;

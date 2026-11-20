@@ -108,7 +108,7 @@
 }
 
 @theme inline {
-  --font-scripts: var(--font-devanagari), var(--font-bengali), var(--font-gujarati), var(--font-gurmukhi), var(--font-tamil), var(--font-telugu), var(--font-kannada), var(--font-malayalam), var(--font-urdu);
+  --font-scripts: var(--font-devanagari);
   --font-sans: var(--font-inter), var(--font-scripts), system-ui, sans-serif;
   --font-display: var(--font-inter), var(--font-scripts), system-ui, sans-serif;
   --font-mono: var(--font-fira), ui-monospace, monospace;
@@ -360,9 +360,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spac
 .docx-box[data-pending="true"] { color: var(--accent-text); }
 .docx-blank { color: var(--text-muted); border-bottom: 1px dashed var(--border); }
 
-/* Nastaliq needs extra line height to stay legible. */
-:root[lang="ur"] body { line-height: 2; }
-:root[lang="ur"] h1, :root[lang="ur"] h2, :root[lang="ur"] h3 { line-height: 1.6; letter-spacing: 0; }
 
 /* ---- Mobile and touch (WCAG 2.2, Apple HIG, Material) ---- */
 /* 16px form text so iOS doesn't zoom the page when a field is focused. */

@@ -305,6 +305,8 @@ const LEAD_INS = [
   /^(?:मेरा|मेरी|हमारा)\s+(?:पूरा\s+)?(?:नाम|ईमेल|ई-मेल|मेल|फ़ोन|फोन|मोबाइल|नंबर|उम्र|शहर|पता)(?:\s+(?:नंबर|आईडी))?\s+/u,
   /^(?:माझं|माझे|माझा|माझी)\s+(?:पूर्ण\s+)?(?:नाव|ईमेल|फोन|मोबाईल|नंबर|वय|शहर|पत्ता)\s+/u,
   /^(?:mera|meri)\s+(?:poora\s+)?(?:naam|email|phone|mobile|number)\s+/i,
+  // Marathi as English letters (browser recognition hears names as Indian English): "majhe naav Ayush aahe".
+  /^(?:majh[aei]|maajh[aei]|maz[aeh]|mazh[ae]|majha|maza)\s+(?:poorn[ae]?\s+|purn[ae]?\s+)?(?:naav|nav|naw|naam|email|e-mail|phone|mobile|number|patta|pata)\s+/i,
 ];
 const TAILS = [/\s+(?:है|हैं|हे|आहे|hai|aahe|ahe)$/u, /\s+(?:please|thank you|thanks)$/i];
 
@@ -313,25 +315,92 @@ function joinSpelled(s: string): string {
   return s.replace(/\b(?:[a-z0-9]\s+){2,}[a-z0-9]\b/gi, (m) => m.replace(/\s+/g, ''));
 }
 
-/** Finds an email in speech-to-text output, reading spoken symbols in English and Hindi. */
+/** Email providers people name out loud, and how speech-to-text writes them. */
+const PROVIDERS: [RegExp, string][] = [
+  [/\b(?:g\s*-?\s*mail|gee\s*mail|jimail|gmial|gmai|gamil|gmal|gmil|gnail|gmaill)\b|जीमेल|जी मेल/giu, 'gmail'],
+  [/\b(?:yahoo+|yaho|yahu)\b|याहू/giu, 'yahoo'],
+  [/\b(?:hot\s*mail|hotmial|hotmal)\b|हॉटमेल/giu, 'hotmail'],
+  [/\b(?:out\s*look|outlok)\b|आउटलुक/giu, 'outlook'],
+  [/\b(?:rediff\s*mail|redif+\s*mail)\b|रेडिफ\s*मेल/giu, 'rediffmail'],
+  [/\b(?:i\s*cloud)\b/giu, 'icloud'],
+];
+export const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'rediffmail.com', 'icloud.com'];
+
+/**
+ * Fixes common slips in an email's domain, the way sign-up forms suggest: gmial.com → gmail.com,
+ * gmail.co / gmail.con → gmail.com. Only well-known providers are touched; anything else is left alone.
+ */
+export function fixEmailDomain(email: string): string {
+  const at = email.lastIndexOf('@');
+  if (at < 0) return email;
+  let domain = email.slice(at + 1).toLowerCase();
+  for (const [re, name] of PROVIDERS) domain = domain.replace(new RegExp(re.source, re.flags), name);
+  const m = domain.match(/^(gmail|yahoo|hotmail|outlook|rediffmail|icloud)\.?(c|co|cm|om|con|comm|cmo|ocm)?$/);
+  if (m) domain = `${m[1]}.com`;
+  return `${email.slice(0, at)}@${domain}`;
+}
+
+/** Finds an email in speech-to-text output, reading spoken symbols in English, Hindi and Marathi. */
 export function extractEmail(input: string): string | null {
-  let v = ` ${toAsciiDigits(input.normalize('NFC')).toLowerCase()} `
-    .replace(/[“”"']/g, ' ')
-    .replace(/\s+(?:at the rate(?: of)?|at sign|at|एट द रेट|एट|ऍट|ॲट)\s+/gu, ' @ ')
+  let v = ` ${toAsciiDigits(input.normalize('NFC')).toLowerCase()} `.replace(/[“”"']/g, ' ');
+  for (const [re, name] of PROVIDERS) v = v.replace(new RegExp(re.source, re.flags), ` ${name} `);
+  v = v
+    // "a for apple", "b as in bombay" → the letter
+    .replace(/\s([a-z])\s+(?:for|as\s+in|फॉर)\s+[\p{L}]+/giu, ' $1')
+    // "double a", "triple 7"
+    .replace(/\s(?:double|डबल)\s+([a-z0-9])\b/giu, ' $1$1').replace(/\s(?:triple|ट्रिपल)\s+([a-z0-9])\b/giu, ' $1$1$1')
+    .replace(/\s+(?:at\s+(?:the|d|da)\s+rate(?:\s+of)?|at\s+rate|at\s+sign|at|एट\s+द\s+रेट|ऐट\s+द\s+रेट|एट|ऍट|ॲट)\s+/gu, ' @ ')
+    .replace(/\s*(?:dot\s*com|डॉट\s*कॉम)\b/gu, ' .com ')
     .replace(/\s+(?:dot|period|point|डॉट|डोट)\s+/gu, ' . ')
     .replace(/\s+(?:underscore|अंडरस्कोर)\s+/gu, ' _ ')
-    .replace(/\s+(?:dash|hyphen|minus|डैश)\s+/gu, ' - ');
+    .replace(/\s+(?:dash|hyphen|minus|डैश)\s+/gu, ' - ')
+    .replace(/\s+(?:कॉम)\b/gu, ' com');
+  // No "at" heard, but a provider was: "ayush shukla gmail dot com" → put the @ before it.
+  if (!v.includes('@')) v = v.replace(/\s(gmail|yahoo|hotmail|outlook|rediffmail|icloud)\b/, ' @ $1');
   v = joinSpelled(v).replace(/\s*([._-])\s*/g, '$1');
-  // Glue the pieces around @ and dots back together: "ayush shukla @ gmail . com" → "ayushshukla@gmail.com"
   const at = v.indexOf('@');
   if (at < 0) return null;
-  const left = v.slice(0, at).trim().split(/\s+/);
-  const local = (left.at(-1) ?? '').replace(/[^\w.+-]/g, '').replace(/^[._-]+/, '');
-  // If the words just before @ were spelled out as several short words, keep only the last word:
-  // "I use shukla @ gmail" → "shukla". Spelled letters were already joined above.
-  const right = v.slice(at + 1).trim().split(/\s+/)[0]!.replace(/[^\w.-]/g, '').replace(/\.+$/, '');
-  const email = `${local}@${right}`;
+  // Everything said before @ (after "my email is" and the like) is the username, spaces removed:
+  // "ayush shukla @ gmail" → "ayushshukla".
+  let left = v.slice(0, at).trim();
+  for (let pass = 0; pass < 2; pass++) for (const re of LEAD_INS) left = left.replace(re, '');
+  const local = left.replace(/\s+/g, '').replace(/[^\w.+-]/g, '').replace(/^[._-]+/, '');
+  let right = v.slice(at + 1).trim().split(/\s+/)[0]!.replace(/[^\w.-]/g, '').replace(/\.+$/, '');
+  if (/^(gmail|yahoo|hotmail|outlook|rediffmail|icloud)$/.test(right)) right += '.com'; // "at gmail"
+  const email = fixEmailDomain(`${local}@${right}`);
   return /^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(email) ? email : null;
+}
+
+/**
+ * Just the part before @, when that's all someone said ("ayush shukla", "a y u s h 9 8"): AwaazForm then
+ * asks which provider, instead of guessing. Null if it doesn't look like a username.
+ */
+export function emailUsername(input: string): string | null {
+  let v = ` ${toAsciiDigits(input.normalize('NFC')).toLowerCase()} `.replace(/[“”"'.!?।]/g, ' ');
+  if (v.includes('@') || /\b(?:at|dot)\b/.test(v)) return null;
+  v = v.replace(/\s([a-z])\s+(?:for|as\s+in)\s+[a-z]+/g, ' $1')
+    .replace(/\s+(?:underscore|अंडरस्कोर)\s+/gu, ' _ ').replace(/\s+(?:dash|hyphen)\s+/g, ' - ');
+  v = joinSpelled(v).trim();
+  for (let pass = 0; pass < 2; pass++) for (const re of LEAD_INS) v = v.replace(re, '');
+  const user = v.replace(/\s*([._-])\s*/g, '$1').replace(/\s+/g, '');
+  return /^[a-z0-9][a-z0-9._+-]{1,40}$/.test(user) ? user : null;
+}
+
+/** The provider someone named on its own ("Gmail", "जीमेल", "yahoo dot com"), as a domain. */
+export function emailProvider(input: string): string | null {
+  let v = ` ${input.normalize('NFC').toLowerCase()} `;
+  for (const [re, name] of PROVIDERS) v = v.replace(new RegExp(re.source, re.flags), ` ${name} `);
+  const m = v.match(/\b(gmail|yahoo|hotmail|outlook|rediffmail|icloud)\b/);
+  return m && v.trim().split(/\s+/).length <= 4 ? `${m[1]}.com` : null;
+}
+
+/** How to read an email back so each letter is clear: “a y u s h, at gmail dot com”. */
+export function spokenEmail(email: string): string {
+  const [local = '', domain = ''] = email.split('@');
+  const say: Record<string, string> = { '.': 'dot', _: 'underscore', '-': 'dash', '+': 'plus' };
+  const letters = [...local].map((c) => say[c] ?? c).join(' ');
+  const known = EMAIL_DOMAINS.includes(domain);
+  return `${letters}, at ${known ? domain.replace('.', ' dot ') : domain.replace(/\./g, ' dot ')}`;
 }
 
 /**
@@ -378,7 +447,7 @@ export function looksUnfinished(text: string): boolean {
  * validates once taken out of the sentence, or a short name/word in Latin letters. Returns the value to
  * propose, or null to let the AI interpret it (several answers at once, other scripts, anything unclear).
  */
-export function quickValue(type: string, raw: string, language = 'en'): string | null {
+export function quickValue(type: string, raw: string, language = 'en', label = ''): string | null {
   const v = raw.trim();
   if (!v || v.split(/\s+/).length > 12) return null;
   if (/\s(and|aur|और|आणि)\s|,/.test(v) && type !== 'email') return null; // possibly several answers
@@ -391,7 +460,14 @@ export function quickValue(type: string, raw: string, language = 'en'): string |
     case 'time': return normalizeTime(clean) ? clean : null;
     // Only for English: in other languages a short Latin-letter transcript is often a romanised sentence
     // (“majhe naav Ayush aahe”) or a misheard one, and needs the AI to pick out the name.
-    case 'text': return language === 'en' && /^[A-Za-z][A-Za-z .'-]{0,60}$/.test(clean) && clean.split(/\s+/).length <= 4 ? clean : null;
+    case 'text': {
+      if (!/^[A-Za-z][A-Za-z .'-]{0,60}$/.test(clean) || clean.split(/\s+/).length > 4) return null;
+      if (language === 'en') return clean;
+      // Names in Hindi or Marathi sessions: rules first when the sentence is clear ("majhe naav Ayush
+      // aahe" → "Ayush"); a longer Latin transcript may be a misheard sentence, so the AI looks at it.
+      const name = /\bname\b|नाम|नाव/i.test(label);
+      return name && (clean !== v.replace(/[.!?।]+$/u, '').trim() || clean.split(/\s+/).length <= 3) ? clean : null;
+    }
     default: return null;
   }
 }

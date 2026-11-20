@@ -12,6 +12,7 @@ import { mountBolu, type BoluState } from '@/lib/bolu';
 import { en, fmt, LANGUAGE_META, localizeMessage, type Strings } from '@/lib/i18n/core';
 import { thinkingSound } from '@/lib/earcon';
 import { createListener, type Listener } from '@/lib/vad';
+import { sttLanguage } from '@/lib/web-speech';
 import { formKey, toQuestions, type ScanResult } from '@/lib/page-questions';
 import { translateQuestions, type QuestionTexts } from '@/lib/question-i18n';
 import { isSpeaking, speakSentences, sttHint, stopSpeaking, transcribe, VoiceError, voiceInputSupported } from '@/lib/voice';
@@ -483,7 +484,7 @@ async function submit(raw: string, source: 'typed' | 'spoken') {
   }
   const quick = raw.trim().split(/\s+/).length <= 4 && OPTION_TYPES.includes(q.type) && validateAnswer(q, raw).ok;
   // Clear short answers (email, phone, number, date, a short Latin-letter name) skip the AI too.
-  const instant = source === 'spoken' && !OPTION_TYPES.includes(q.type) ? quickValue(q.type, raw, lang) : null;
+  const instant = source === 'spoken' && !OPTION_TYPES.includes(q.type) ? quickValue(q.type, raw, lang, q.label) : null;
   if (instant) raw = instant;
   const needsAi = source === 'spoken' ? !quick && !instant : OPTION_TYPES.includes(q.type) && !validateAnswer(q, raw).ok;
   if (needsAi) {
@@ -658,7 +659,8 @@ async function startLive() {
       render();
       try {
         const q0 = current();
-        await handleText(await transcribe(blob, lang, sttHint(q0, lang, q0 && qt[q0.id])));
+        const sl = sttLanguage(q0, lang); // names and emails are heard as English
+        await handleText(await transcribe(blob, sl, sttHint(q0, sl, q0 && qt[q0.id])));
       } catch (err) {
         const e = err as VoiceError;
         if (e.kind === 'ai') note = { text: `${t.session.ai_unavailable} (${localizeMessage(t, e.message)})`, tone: 'warn' };

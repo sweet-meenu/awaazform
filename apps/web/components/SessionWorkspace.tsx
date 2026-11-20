@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  canSave, cleanSpokenAnswer, commandWords, createShield, looksUnfinished, matchOption, parseVoiceCommand, quickValue, SessionController, suggestCanonicalKey, ToolRunner, validateAnswer,
+  canSave, cleanSpokenAnswer, commandWords, createShield, EMAIL_DOMAINS, emailProvider, emailUsername, extractEmail, spokenEmail, looksUnfinished, matchOption, parseVoiceCommand, quickValue, SessionController, suggestCanonicalKey, ToolRunner, validateAnswer,
   type CanonicalKey, type FieldWriter, type FormQuestion, type Language, type Profile, type Session, type ToolHost,
 } from '@awaazform/core';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -18,6 +18,7 @@ import { SignaturePad } from '@/components/SignaturePad';
 import { fmt, LANGUAGE_META, localizeMessage, Rich, type Strings } from '@/lib/i18n';
 import { thinkingSound } from '@/lib/earcon';
 import { createListener, type Listener } from '@/lib/vad';
+import { BrowserListener, BrowserSttError, browserSttAvailable, recognitionLocale, recognizeOnce, sttLanguage, type BrowserLiveCallbacks, type Heard } from '@/lib/web-speech';
 import { inScript, translateQuestions, type QuestionTexts } from '@/lib/question-i18n';
 import { saveSession } from '@/lib/session-store';
 import { useSettings } from '@/lib/settings';
@@ -55,11 +56,24 @@ export function displayValue(q: FormQuestion, v: string, lang: Language): string
 }
 
 /** An answer as shown on screen: a drawn signature as its picture, everything else as text. */
+/** What the browser should offer in the answer box: the email keyboard and autofill for emails, and so on. */
+// inputMode, not type="email": the browser would refuse to submit “ayush at gmail dot com”, which
+// AwaazForm turns into an address itself.
+function inputHints(q: FormQuestion | undefined): { inputMode?: 'email' | 'tel' | 'numeric' | 'text'; autoComplete: string } {
+  if (!q) return { autoComplete: 'off' };
+  if (q.type === 'email') return { inputMode: 'email', autoComplete: 'email' };
+  if (q.type === 'phone') return { inputMode: 'tel', autoComplete: 'tel' };
+  if (q.type === 'number') return { inputMode: 'numeric', autoComplete: 'off' };
+  if (q.type === 'text' && /\b(full\s+)?name\b/i.test(q.label) && !/father|mother|guardian|company|school|college|event/i.test(q.label)) return { autoComplete: 'name' };
+  return { autoComplete: 'off' };
+}
+
 function Answer({ q, v, lang, alt }: { q: FormQuestion; v: string; lang: Language; alt: string }) {
   if (q.type === 'signature' && v.startsWith('data:image/png')) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={v} alt={alt} className="inline-block max-h-16 max-w-full rounded bg-white p-1 align-middle" />;
   }
+  if (q.type === 'email') return <span className="font-mono">{v}</span>;
   return <>{displayValue(q, v, lang)}</>;
 }
 
@@ -140,6 +154,18 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const runnerRef = useRef<ToolRunner | null>(null);
   const recRef = useRef<Awaited<ReturnType<typeof startRecording>> | null>(null);
   const liveRef = useRef<Listener | null>(null);
+  /** An email's username heard on its own, waiting for “Gmail” / a provider button. */
+  const pendingEmail = useRef<{ qid: string; user: string } | null>(null);
+  /** Spoken email attempts that didn't give a valid address, per question (then: suggest typing). */
+  const emailMisses = useRef<Record<string, number>>({});
+  /** Words being heard right now (browser recognition), shown live. */
+  const [interim, setInterim] = useState('');
+  /** Other ways the last spoken answer was heard, per question, for “or did you say…”. */
+  const [heardAlts, setHeardAlts] = useState<Record<string, string[]>>({});
+  const browserRec = useRef<ReturnType<typeof recognizeOnce> | null>(null);
+  const rememberHeard = useCallback((qid: string | undefined, h: Heard) => {
+    if (qid) setHeardAlts((m) => ({ ...m, [qid]: h.alternatives.slice(0, 2) }));
+  }, []);
   /** Each spoken or typed turn's number; a newer turn or a new question makes older ones stale. */
   const turnRef = useRef(0);
   const sttFailures = useRef(0);
@@ -429,8 +455,18 @@ export function SessionWorkspace(props: WorkspaceProps) {
     const a = ctlRef.current?.session.answers[question.id];
     const script = await toScript(question);
     // A signature has no text to read out: say “your signature” instead of an empty “Got it: .”
+    // Emails are read letter by letter (“a y u s h, at gmail dot com”), so a wrong letter is easy to hear.
     const shown = (v: string) => (question.type === 'signature' ? latest.current.t.session.signature_drawn
+      : question.type === 'email' && /@/.test(v) ? spokenEmail(v)
       : script ?? displayValue(question, v, latest.current.settings.language)).replace(/[.!?।]+$/u, '');
+    if (question.type === 'email' && a?.status === 'invalid' && a.source === 'spoken') {
+      emailMisses.current[question.id] = (emailMisses.current[question.id] ?? 0) + 1;
+      if (emailMisses.current[question.id]! >= 2) {
+        // Twice misheard: typing (with the phone's email keyboard and autofill) is quicker.
+        setNotice(latest.current.t.session.email_type_hint);
+        setTimeout(() => inputRef.current?.focus(), 60);
+      }
+    }
     if (a?.status === 'proposed' && a.normalized && endMode()) {
       // Conversational: a short acknowledgement and on to the next question; the check comes at the end.
       await say(fmt(latest.current.t.session.got_it, { value: shown(shownAnswer(question, a.normalized, latest.current.settings.language, qtRef.current)) }));
@@ -453,6 +489,21 @@ export function SessionWorkspace(props: WorkspaceProps) {
     setOffer(null);
     setBubble(null);
 
+    // Emails: a provider said after the username completes it ("ayush shukla" … "Gmail"); a username on
+    // its own gets the question “which provider?” instead of a guess.
+    if (cq.type === 'email' && source === 'spoken') {
+      const pe = pendingEmail.current?.qid === cq.id ? pendingEmail.current : null;
+      const provider = pe ? emailProvider(raw) : null;
+      if (pe && provider) { pendingEmail.current = null; raw = `${pe.user}@${provider}`; }
+      else if (!raw.includes('@') && !extractEmail(raw)) {
+        const user = emailUsername(raw);
+        if (user) {
+          pendingEmail.current = { qid: cq.id, user };
+          setInput(`${user}@`);
+          return void say(fmt(latest.current.t.session.email_which, { user: [...user].join(' ') }), true);
+        }
+      }
+    }
     // An option said or typed in the user's language ("छात्र") stands for the form's own option ("Student").
     const trOpts = qtRef.current[cq.id]?.options;
     if (trOpts && cq.options?.length) {
@@ -466,7 +517,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
     // Typed answers are taken literally. The exception: a typed answer to an option question that matches
     // no option ("I study in college") goes to the AI to map onto one, still with read-back and confirm.
     // Clear short answers (an email, phone, number, date, or a short name in Latin letters) also skip it.
-    const instant = source === 'spoken' && !OPTION_TYPES.includes(cq.type) ? quickValue(cq.type, raw, latest.current.settings.language) : null;
+    const instant = source === 'spoken' && !OPTION_TYPES.includes(cq.type) ? quickValue(cq.type, raw, latest.current.settings.language, cq.label) : null;
     if (instant) raw = instant;
     const needsAi = source === 'spoken' ? !quick && !instant : OPTION_TYPES.includes(cq.type) && !validateAnswer(cq, raw).ok;
     if (latest.current.aiOn && needsAi) {
@@ -595,6 +646,33 @@ export function SessionWorkspace(props: WorkspaceProps) {
 
   // ---- Push-to-talk ----
   const toggleRecording = async () => {
+    // The browser's own recognition (Chrome, Edge): words appear as you speak, and it answers as soon
+    // as you stop talking. Pressing the mic again stops it early.
+    if (recording && browserRec.current) return browserRec.current.stop();
+    if (!recording && browserSttAvailable()) {
+      stopSpeaking();
+      const cq = q;
+      let rec: ReturnType<typeof recognizeOnce>;
+      try {
+        rec = recognizeOnce(recognitionLocale(cq, lang), (s) => setInput(s));
+      } catch {
+        return setNotice(t.session.voice_unavailable);
+      }
+      browserRec.current = rec;
+      if (cq) ctl?.listening(cq.id);
+      setRecording(true);
+      setNotice(null);
+      rec.result.then(async (h) => {
+        setInput(h.text);
+        rememberHeard(cq?.id, h);
+        await submit(h.text, 'spoken');
+      }).catch((e: BrowserSttError) => {
+        if (e.code === 'not-allowed') setNotice(t.widget.mic_blocked);
+        else if (e.code === 'no-speech') setNotice(localizeMessage(t, "I didn't catch that"));
+        else if (e.code !== 'aborted') setNotice(t.session.voice_unavailable);
+      }).finally(() => { browserRec.current = null; setRecording(false); });
+      return;
+    }
     if (recording) {
       setRecording(false);
       setBusy('transcribing');
@@ -612,7 +690,8 @@ export function SessionWorkspace(props: WorkspaceProps) {
     }
     stopSpeaking();
     try {
-      recRef.current = await startRecording(lang, sttHint(q, lang, q && qtRef.current[q.id]));
+      const sl = sttLanguage(q, lang);
+      recRef.current = await startRecording(sl, sttHint(q, sl, q && qtRef.current[q.id]));
       if (q) ctl?.listening(q.id);
       setRecording(true);
       setNotice(null);
@@ -689,7 +768,8 @@ export function SessionWorkspace(props: WorkspaceProps) {
         try {
           const c0 = ctlRef.current;
           const q0 = c0?.session.questions[c0.session.currentIndex];
-          const text = await transcribe(blob, latest.current.settings.language, sttHint(q0, latest.current.settings.language, q0 && qtRef.current[q0.id]));
+          const sl = sttLanguage(q0, latest.current.settings.language);
+          const text = await transcribe(blob, sl, sttHint(q0, sl, q0 && qtRef.current[q0.id]));
           sttFailures.current = 0;
           await handleText(text);
         } catch (err) {
@@ -708,9 +788,41 @@ export function SessionWorkspace(props: WorkspaceProps) {
       },
       onLevel: setLevel,
     };
+    // The browser's recognition when it works here (Chrome, Edge); otherwise recorded clips → Whisper.
+    const browserCallbacks: BrowserLiveCallbacks = {
+      onSpeechStart: callbacks.onSpeechStart,
+      onInterim: (s) => { setInterim(s); setLive('hearing'); },
+      onText: (h) => {
+        setInterim('');
+        const c0 = ctlRef.current;
+        rememberHeard(c0?.session.questions[c0.session.currentIndex]?.id, h);
+        liveRef.current?.setPaused(true);
+        setLive('thinking');
+        void handleText(h.text).finally(() => {
+          liveRef.current?.setPaused(false);
+          setLive((s) => (s === 'off' ? 'off' : 'listening'));
+        });
+      },
+      onFatal: (code) => {
+        setInterim('');
+        if (code === 'not-allowed') { setNotice(t.session.voice_unavailable); stopLive(); return; }
+        // Offline or blocked: carry on with recorded clips and Whisper.
+        liveRef.current?.stop();
+        void createListener(callbacks).then((l) => { liveRef.current = l; }).catch(() => { setNotice(t.session.voice_unavailable); stopLive(); });
+      },
+      locale: () => {
+        const c0 = ctlRef.current;
+        return recognitionLocale(c0?.session.questions[c0.session.currentIndex], latest.current.settings.language);
+      },
+    };
     let listener: Listener;
     try {
-      listener = await createListener(callbacks);
+      if (browserSttAvailable()) {
+        listener = new BrowserListener(browserCallbacks);
+        await listener.start();
+      } else {
+        listener = await createListener(callbacks);
+      }
     } catch {
       return setNotice(t.session.voice_unavailable);
     }
@@ -920,7 +1032,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
 
               {/* Live Mode's conversation stays on screen through every step: the read-back, Confirm/Edit,
                   saved-detail offers and errors appear under it instead of replacing it. */}
-              {live !== 'off' && <LivePanel state={live} level={level} t={t} turns={turns} words={commandWords(lang)} onInterrupt={interrupt} />}
+              {live !== 'off' && <LivePanel state={live} level={level} t={t} turns={turns} words={commandWords(lang)} onInterrupt={interrupt} interim={interim} />}
               {q.support === 'unsupported' ? (
                 <p className="rounded-[var(--r-12)] p-4 text-sm" style={{ background: 'var(--amber-100)', color: 'var(--amber-700)' }}>
                   {t.session.not_supported} {localizeMessage(t, q.supportReason)}
@@ -943,6 +1055,16 @@ export function SessionWorkspace(props: WorkspaceProps) {
                     )}
                     {answer.translated && <p className="mt-1 text-xs text-muted">You said: “{answer.raw}”</p>}
                     {answer.source === 'profile' && <p className="mt-1 text-xs text-muted">{t.session.from_saved}</p>}
+                    {/* The recogniser's other guesses: one tap if it picked the wrong spelling. */}
+                    {answer.source === 'spoken' && (heardAlts[q.id]?.length ?? 0) > 0 && ['text', 'email', 'paragraph'].includes(q.type) && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                        <span className="text-muted">{t.session.did_you_say}</span>
+                        {heardAlts[q.id]!.map((alt) => (
+                          <button key={alt} type="button" className="btn btn-ghost !min-h-11 !px-3 !py-1 text-sm" disabled={!!busy}
+                            onClick={() => { setHeardAlts((m) => ({ ...m, [q.id]: [] })); ctl?.edit(q.id); void submit(alt, 'spoken'); }}>{alt}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button type="button" className="btn btn-success btn-lg flex-1" onClick={confirm} disabled={busy === 'filling'}>✓ {t.session.confirm}</button>
@@ -973,7 +1095,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
                   )}
                   <div className="composer" data-invalid={answer.status === 'invalid'}>
                     <input id="answer" ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder={live !== 'off' ? t.session.or_type : t.session.type_answer}
-                      autoComplete="off" maxLength={2000} aria-invalid={answer.status === 'invalid'} aria-describedby={answer.error ? 'answer-err' : undefined} />
+                      {...inputHints(q)} maxLength={2000} aria-invalid={answer.status === 'invalid'} aria-describedby={answer.error ? 'answer-err' : undefined} />
                     {live === 'off' && (
                       <MicButton recording={recording} disabled={!voiceInputSupported() || (!!busy && !recording)} onClick={toggleRecording} label={recording ? t.session.stop : t.session.speak} />
                     )}
@@ -982,6 +1104,20 @@ export function SessionWorkspace(props: WorkspaceProps) {
                       <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
                   </div>
+                  {q.type === 'email' && (
+                    // One tap for the provider: the part most often misheard (“gmail dot com”).
+                    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t.session.email_pick}>
+                      {EMAIL_DOMAINS.slice(0, 4).map((d) => (
+                        <button key={d} type="button" className="btn btn-ghost !min-h-11 !px-3 !py-1 text-sm" disabled={!!busy}
+                          onClick={() => {
+                            const user = (input.split('@')[0] || pendingEmail.current?.user || '').trim().replace(/\s+/g, '');
+                            pendingEmail.current = null;
+                            if (user) void submit(`${user}@${d}`, 'typed');
+                            else { setInput(`@${d}`); setTimeout(() => { inputRef.current?.focus(); inputRef.current?.setSelectionRange(0, 0); }, 30); }
+                          }}>@{d}</button>
+                      ))}
+                    </div>
+                  )}
                   {answer.status === 'invalid' && answer.error && <p id="answer-err" className="text-sm font-medium" style={{ color: 'var(--red-600)' }}>{localizeMessage(t, answer.error)}</p>}
                   <p className="min-h-5 text-sm text-muted" aria-live="polite">
                     {recording ? <b style={{ color: 'var(--accent-text)' }}>{t.live.hearing} Press the mic again when you finish.</b>
@@ -1088,7 +1224,7 @@ function OfferCard({ offer, q, lang, profileLabel, t, onDecide, reduceMotion }: 
   );
 }
 
-function LivePanel({ state, level, t, turns, words, onInterrupt }: { state: LiveState; level: number; t: Strings; turns: Turn[]; words: Record<string, string>; onInterrupt: () => void }) {
+function LivePanel({ state, level, t, turns, words, onInterrupt, interim }: { state: LiveState; level: number; t: Strings; turns: Turn[]; words: Record<string, string>; onInterrupt: () => void; interim?: string }) {
   const label: Record<LiveState, string> = { off: '', listening: t.live.listening, hearing: t.live.hearing, thinking: t.live.thinking, speaking: t.live.speaking };
   const logRef = useRef<HTMLOListElement>(null);
   useEffect(() => {
@@ -1102,7 +1238,11 @@ function LivePanel({ state, level, t, turns, words, onInterrupt }: { state: Live
           className="relative grid h-14 w-14 flex-none place-items-center rounded-full disabled:cursor-default" style={{ background: 'var(--ink-700)' }}>
           <Bolu size={48} head state={state === 'thinking' ? 'thinking' : state === 'speaking' ? 'speaking' : 'listening'} level={level} />
         </button>
-        <span className="text-sm font-medium">{label[state]}</span>
+        <span className="grid min-w-0 text-sm font-medium">
+          {label[state]}
+          {/* The words as they are heard (browser recognition), so you see it understood you. */}
+          {interim && state === 'hearing' && <span className="truncate font-normal italic opacity-80" aria-hidden>“{interim}”</span>}
+        </span>
       </div>
       {turns.length > 0 ? (
         <ol ref={logRef} aria-label={t.session.conversation} className="grid max-h-48 gap-1.5 overflow-y-auto text-sm" style={{ scrollbarWidth: 'thin' }}>

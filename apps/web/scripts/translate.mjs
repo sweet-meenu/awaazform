@@ -16,11 +16,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { en } = await import(join(root, 'lib/i18n/en.ts'));
 const OUT = join(root, 'lib/i18n/locales');
 
-const NAMES = {
-  hi: 'Hindi (Devanagari)', bn: 'Bengali (Bengali script)', mr: 'Marathi (Devanagari)', te: 'Telugu', ta: 'Tamil',
-  gu: 'Gujarati', ur: 'Urdu (Perso-Arabic script, Nastaliq style)', kn: 'Kannada', ml: 'Malayalam',
-  pa: 'Punjabi (Gurmukhi script)', as: 'Assamese (Assamese/Bengali script)', ne: 'Nepali (Devanagari)',
-};
+const NAMES = { hi: 'Hindi (Devanagari)', mr: 'Marathi (Devanagari)' };
 
 const args = process.argv.slice(2);
 const force = args.includes('--force');

@@ -10,10 +10,7 @@ import { useSettings } from '@/lib/settings';
 const LANG_SAMPLES = [
   { code: 'en', hello: 'What is your full name?' },
   { code: 'hi', hello: 'आपका पूरा नाम क्या है?' },
-  { code: 'bn', hello: 'আপনার পুরো নাম কী?' },
   { code: 'mr', hello: 'तुमचे पूर्ण नाव काय आहे?' },
-  { code: 'ta', hello: 'உங்கள் முழுப் பெயர் என்ன?' },
-  { code: 'ur', hello: 'آپ کا پورا نام کیا ہے؟' },
 ] as const;
 
 export default function Home() {

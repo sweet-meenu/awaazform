@@ -494,7 +494,11 @@
   "filled_continue": "झाले, ती फॉर्मवर आहेत. पुढे चालू ठेवूया.",
   "moving_on": "कृपया हे फॉर्मवर स्वतः करा; मी पुढे जातो.",
   "filled_some": "मी {n} उत्तरं भरली. {failed} भरली नाहीत; ती फॉर्मवर चिन्हांकित आहेत.",
-  "nothing_to_fill": "आत्तापर्यंत भरायचे काहीही नाही. प्रथम तुमची उत्तरे सांगा."
+  "nothing_to_fill": "आत्तापर्यंत भरायचे काहीही नाही. प्रथम तुमची उत्तरे सांगा.",
+  "did_you_say": "किंवा तुम्ही असे म्हटले का:",
+  "email_which": "पहिला भाग मिळाला: {user}. कोणता ईमेल आहे: Gmail, Yahoo किंवा Outlook?",
+  "email_pick": "ईमेल प्रदाता",
+  "email_type_hint": "ईमेल टाइप करणे सोपे आहे: बॉक्समध्ये टाइप करा (तुमचा कीबोर्ड सुचवू शकतो), किंवा तुमचा प्रदाता टॅप करा."
  },
  "live": {
   "mode": "लाइव्ह मोड",
@@ -962,6 +966,10 @@
   "form.open_form": "Open the form",
   "form.signin_hint": "Forms that need a sign-in can still be filled by voice: the AwaazForm extension works inside your own browser, where you are already signed in. Open the form there and tap Bolu.",
   "form.use_extension": "Get the extension",
+  "form.live_tab": "Google Form",
+  "form.live_title": "The real Google Form, filled with your confirmed answers",
+  "form.live_note": "Each answer you confirm appears here in the real form (your confirmed answers go to Google in its link). ID numbers such as Aadhaar or PAN are left out: type them in the form. When everything is in, press Submit inside the form yourself.",
+  "form.live_loading": "Loading the form…",
   "pdf.eyebrow": "PDF forms",
   "pdf.title": "Fill a PDF by voice",
   "pdf.lead": "Your PDF stays in this browser. AwaazForm fills it, and you download it and submit it yourself.",
@@ -1570,9 +1578,9 @@
   "pwa.share_multiple": "Share one document at a time.",
   "pwa.share_type": "Share a PDF, a Word (.docx) document, or a Google or Microsoft Forms link.",
   "pwa.share_unavailable": "This shared item is no longer available. Open the installed app and share it again, or choose the file from Documents.",
-  "form.live_tab": "Google Form",
-  "form.live_title": "The real Google Form, filled with your confirmed answers",
-  "form.live_note": "Each answer you confirm appears here in the real form (your confirmed answers go to Google in its link). ID numbers such as Aadhaar or PAN are left out: type them in the form. When everything is in, press Submit inside the form yourself.",
-  "form.live_loading": "Loading the form…"
+  "session.did_you_say": "Or did you say:",
+  "session.email_which": "Got the first part: {user}. Which email is it: Gmail, Yahoo or Outlook?",
+  "session.email_pick": "Email provider",
+  "session.email_type_hint": "Emails are easier to type: type it in the box (your keyboard may suggest it), or tap your provider."
  }
 }

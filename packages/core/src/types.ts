@@ -61,7 +61,7 @@ export interface Answer {
  * Interface and conversation languages: English and the Indian languages Whisper (our speech-to-text)
  * understands. Odia is not among them, so it is not offered.
  */
-export const LANGUAGES = ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'ur', 'kn', 'ml', 'pa', 'as', 'ne'] as const;
+export const LANGUAGES = ['en', 'hi', 'mr'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export interface Session {

@@ -18,17 +18,7 @@ export interface LanguageMeta {
 export const LANGUAGE_META: Record<Language, LanguageMeta> = {
   en: { native: 'English', english: 'English', locale: 'en-IN', dir: 'ltr' },
   hi: { native: 'हिन्दी', english: 'Hindi', locale: 'hi-IN', dir: 'ltr' },
-  bn: { native: 'বাংলা', english: 'Bengali', locale: 'bn-IN', dir: 'ltr' },
   mr: { native: 'मराठी', english: 'Marathi', locale: 'mr-IN', dir: 'ltr' },
-  te: { native: 'తెలుగు', english: 'Telugu', locale: 'te-IN', dir: 'ltr' },
-  ta: { native: 'தமிழ்', english: 'Tamil', locale: 'ta-IN', dir: 'ltr' },
-  gu: { native: 'ગુજરાતી', english: 'Gujarati', locale: 'gu-IN', dir: 'ltr' },
-  ur: { native: 'اردو', english: 'Urdu', locale: 'ur-IN', dir: 'rtl' },
-  kn: { native: 'ಕನ್ನಡ', english: 'Kannada', locale: 'kn-IN', dir: 'ltr' },
-  ml: { native: 'മലയാളം', english: 'Malayalam', locale: 'ml-IN', dir: 'ltr' },
-  pa: { native: 'ਪੰਜਾਬੀ', english: 'Punjabi', locale: 'pa-IN', dir: 'ltr' },
-  as: { native: 'অসমীয়া', english: 'Assamese', locale: 'as-IN', dir: 'ltr' },
-  ne: { native: 'नेपाली', english: 'Nepali', locale: 'ne-NP', dir: 'ltr' },
 };
 
 /** Fills `{name}` placeholders. Unknown names are left as they are. */

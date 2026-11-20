@@ -35,7 +35,7 @@ export function loadSettings(): Settings {
 }
 
 /** Inline script applied before paint, so saved themes don't flash (FR-47 persistence). */
-export const settingsBootScript = `try{var s=JSON.parse(localStorage.getItem('${KEY}')||'{}'),d=document.documentElement;if(s.contrast)d.dataset.contrast=s.contrast;if(s.text)d.dataset.text=s.text;if(s.motion)d.dataset.motion=s.motion;if(s.language){d.lang=s.language;d.dir=s.language==='ur'?'rtl':'ltr'}}catch(e){}`;
+export const settingsBootScript = `try{var s=JSON.parse(localStorage.getItem('${KEY}')||'{}'),d=document.documentElement;if(s.contrast)d.dataset.contrast=s.contrast;if(s.text)d.dataset.text=s.text;if(s.motion)d.dataset.motion=s.motion;if(s.language){d.lang=s.language}}catch(e){}`;
 
 interface Ctx {
   settings: Settings;
