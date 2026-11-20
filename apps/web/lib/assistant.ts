@@ -123,11 +123,17 @@ export async function assistantTurn(
   const messages: ChatMsg[] = [...history, { role: 'user', content: hide(utterance.slice(0, 2000)) }];
   let streamed = false;
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    // Once a value is proposed, the app reads it back and asks for confirmation itself: the model's own
-    // “is this right?” would repeat it, late, over the next question. So its words are not passed on.
-    const split = onSentence ? sentenceSplitter((s) => { if (proposed.length) return; streamed = true; onSentence(reveal(s)); }) : null;
+    // When the model fills an answer, the app reads it back and asks the next question itself; the
+    // model's own words (“is that right?”, the next question rephrased) would repeat that, late. Its
+    // text often streams just before the tool call in the same message, so sentences are held until
+    // the message is complete and spoken only if it filled nothing.
+    const held: string[] = [];
+    const split = onSentence ? sentenceSplitter((s) => held.push(s)) : null;
     const msg = await step(ctx, messages, false, split ? (d) => split.push(d) : undefined);
     split?.flush();
+    if (onSentence && !proposed.length && !msg.tool_calls?.some((c) => c.function.name === 'propose_fill')) {
+      for (const s of held) { streamed = true; onSentence(reveal(s)); }
+    }
     messages.push({ role: 'assistant', content: msg.content ?? null, tool_calls: msg.tool_calls });
     if (!msg.tool_calls?.length) return { reply: msg.content && !proposed.length ? reveal(msg.content) : null, history: messages, proposed, streamed };
     for (const tc of msg.tool_calls) {

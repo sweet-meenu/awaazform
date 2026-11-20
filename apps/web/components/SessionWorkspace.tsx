@@ -984,7 +984,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
                 </form>
               )}
 
-              {bubble && (
+              {bubble && live === 'off' && ( // in Live Mode the conversation panel already shows it
                 <div className="bubble" role="status">
                   <span className="mb-1 block text-xs font-medium text-muted">AwaazForm</span>{bubble}
                 </div>
