@@ -92,6 +92,9 @@ export function prepareVoice(language: Language) {
 }
 let speaking = false;
 export const isSpeaking = () => speaking;
+/** What Bolu is saying right now, so Live Mode can tell his own echo from the user talking over him. */
+let speakingText = '';
+export const nowSpeaking = () => (speaking ? speakingText : '');
 
 let finishCurrent: (() => void) | null = null;
 
@@ -117,6 +120,7 @@ export async function speak(text: string, opts: { language: Language; rate?: num
   if (busy) await new Promise((r) => setTimeout(r, 60));
   if (mine !== generation) return;
   speaking = true;
+  speakingText = text;
   try {
     await speakInner(text, opts, () => mine === generation);
   } finally {

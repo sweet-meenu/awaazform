@@ -24,7 +24,7 @@ import { saveSession } from '@/lib/session-store';
 import { useSettings } from '@/lib/settings';
 import type { SurfaceHandle } from '@/lib/surface';
 import { hasPasskey, isUnlocked, onVaultChange, readValues, unlock, unlockWithPasskey } from '@/lib/vault';
-import { isSpeaking, speak, sttHint, voiceAvailable, voicesReady, speakSentences, startRecording, stopSpeaking, transcribe, VoiceError, voiceInputSupported } from '@/lib/voice';
+import { isSpeaking, nowSpeaking, speak, sttHint, voiceAvailable, voicesReady, speakSentences, startRecording, stopSpeaking, transcribe, VoiceError, voiceInputSupported } from '@/lib/voice';
 
 type Offer =
   | { kind: 'use'; key: CanonicalKey; value: string; resolve?: (v: string | null) => void }
@@ -791,6 +791,13 @@ export function SessionWorkspace(props: WorkspaceProps) {
     // The browser's recognition when it works here (Chrome, Edge); otherwise recorded clips → Whisper.
     const browserCallbacks: BrowserLiveCallbacks = {
       onSpeechStart: callbacks.onSpeechStart,
+      speaking: nowSpeaking,
+      onBargeIn: () => {
+        if (!isSpeaking()) return;
+        bargedIn.current = true; // FR-42: the user talked over Bolu
+        stopSpeaking();
+        setLive('hearing');
+      },
       onInterim: (s) => { setInterim(s); setLive('hearing'); },
       onText: (h) => {
         setInterim('');

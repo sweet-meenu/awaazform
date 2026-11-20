@@ -102,6 +102,10 @@ export function recognizeOnce(locale: string, onInterim?: (text: string) => void
 
 export interface BrowserLiveCallbacks {
   onSpeechStart: () => void;
+  /** The user started talking over Bolu (not his own echo): stop speaking and listen. */
+  onBargeIn?: () => void;
+  /** What Bolu is saying right now ('' when silent), to recognise his own voice in the microphone. */
+  speaking?: () => string;
   onText: (heard: Heard) => void;
   onInterim?: (text: string) => void;
   /** Recognition stopped working (offline, blocked): switch to the recorded-clip listener. */
@@ -111,15 +115,30 @@ export interface BrowserLiveCallbacks {
 }
 
 /**
- * Live Mode with the browser's recognition. It is stopped while Bolu speaks or the answer is being
- * handled, so it never hears Bolu, and restarted afterwards (Chrome also ends sessions on its own after
- * a silence: those are restarted too).
+ * Whether heard words are just Bolu's own voice coming back through the speakers: most of them are
+ * in the sentence he is saying. Words in Devanagari and English letters are compared as they are.
+ */
+export function isEcho(heard: string, spoken: string): boolean {
+  const words = (s: string) => s.toLowerCase().normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
+  const h = words(heard);
+  if (!h.length) return true;
+  const said = new Set(words(spoken));
+  const inside = h.filter((w) => said.has(w)).length;
+  return inside / h.length >= 0.5;
+}
+
+/**
+ * Live Mode with the browser's recognition. It pauses while the answer is being handled and restarts
+ * afterwards (Chrome also ends sessions on its own after a silence: those are restarted too). While Bolu
+ * speaks it keeps listening when interruptions are allowed: words that match what he is saying are his
+ * own echo and are ignored; two or more other words are the user talking over him.
  */
 export class BrowserListener implements Listener {
   private r: SR | null = null;
   private active = false;
   private paused = false;
   private speaking = false;
+  private bargeIn = false;
 
   constructor(private cb: BrowserLiveCallbacks) {}
 
@@ -140,37 +159,56 @@ export class BrowserListener implements Listener {
     this.refresh();
   }
 
-  /** Barge-in by voice isn't offered here: on speakers the recogniser would hear Bolu himself. */
-  setSpeaking(on: boolean) {
+  setSpeaking(on: boolean, allowBargeIn = false) {
     this.speaking = on;
+    this.bargeIn = allowBargeIn;
     this.refresh();
   }
 
+  /** Not listening while the answer is handled, nor while Bolu speaks unless interruptions are on. */
+  private get deaf() { return this.paused || (this.speaking && !this.bargeIn); }
+
   private refresh() {
-    if (this.paused || this.speaking) { this.r?.abort(); this.r = null; }
+    if (this.deaf) { this.r?.abort(); this.r = null; }
     else if (!this.r) this.listen();
+  }
+
+  /** Talking over Bolu: real words, not his echo. */
+  private overBolu(text: string): boolean {
+    const spoken = this.cb.speaking?.() ?? '';
+    return !!spoken && text.trim().split(/\s+/).length >= 2 && !isEcho(text, spoken);
   }
 
   private listen() {
     const C = Ctor();
-    if (!C || !this.active || this.paused || this.speaking || this.r) return;
+    if (!C || !this.active || this.deaf || this.r) return;
     const r = new C();
     this.r = r;
     r.lang = this.cb.locale();
     r.continuous = false; // one utterance per session: Chrome ends it when the user stops talking
     r.interimResults = true;
     r.maxAlternatives = 3;
-    r.onspeechstart = () => this.cb.onSpeechStart();
+    // While Bolu talks, "speech" may be his own voice: decide from the words, not the sound.
+    r.onspeechstart = () => { if (!this.cb.speaking?.()) this.cb.onSpeechStart(); };
     r.onresult = (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i]!;
         if (res.isFinal) {
           const heard = heardFrom(res);
-          if (heard.text) this.cb.onText(heard);
+          if (!heard.text) continue;
+          const spoken = this.cb.speaking?.() ?? '';
+          if (spoken && isEcho(heard.text, spoken)) continue; // Bolu hearing himself
+          if (spoken) this.cb.onBargeIn?.();
+          this.cb.onText(heard);
         } else interim += res[0]?.transcript ?? '';
       }
-      if (interim) this.cb.onInterim?.(interim);
+      if (!interim) return;
+      if (this.cb.speaking?.()) {
+        if (this.overBolu(interim)) { this.cb.onBargeIn?.(); this.cb.onInterim?.(interim); }
+        return;
+      }
+      this.cb.onInterim?.(interim);
     };
     r.onerror = (e) => {
       if (FATAL.has(e.error) || e.error === 'not-allowed') {

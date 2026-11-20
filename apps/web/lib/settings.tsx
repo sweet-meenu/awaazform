@@ -20,13 +20,17 @@ export interface Settings {
   bargeIn: boolean;
 }
 
-const DEFAULTS: Settings = { language: 'en', contrast: 'normal', text: 'normal', motion: 'system', speechRate: 1, voiceURI: '', privacyShield: true, confirmMode: 'end', bargeIn: false };
+const DEFAULTS: Settings = { language: 'en', contrast: 'normal', text: 'normal', motion: 'system', speechRate: 1, voiceURI: '', privacyShield: true, confirmMode: 'end', bargeIn: true };
 const KEY = 'awaazform.settings';
 
 export function loadSettings(): Settings {
   if (typeof window === 'undefined') return DEFAULTS;
   try {
-    const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') } as Settings;
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings> & { v?: number };
+    // v2: talking over Bolu became safe on speakers (he recognises his own voice), so it is on by
+    // default; settings saved before then had it off only because of the old default.
+    if ((saved.v ?? 1) < 2) { delete saved.bargeIn; saved.v = 2; }
+    const s = { ...DEFAULTS, ...saved } as Settings;
     if (!LANGUAGES.includes(s.language)) s.language = 'en';
     return s;
   } catch {
@@ -80,7 +84,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const update = (patch: Partial<Settings>) =>
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      localStorage.setItem(KEY, JSON.stringify(next));
+      localStorage.setItem(KEY, JSON.stringify({ ...next, v: 2 }));
       return next;
     });
 
