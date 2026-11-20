@@ -160,6 +160,8 @@ export const en = {
   },
 
   form: {
+    signin_hint: 'Forms that need a sign-in can still be filled by voice: the AwaazForm extension works inside your own browser, where you are already signed in. Open the form there and tap Bolu.',
+    use_extension: 'Get the extension',
     eyebrow: 'Google Forms · Microsoft Forms',
     title: 'Fill an online form<br/>by voice',
     lead: 'Paste the form’s link. Answer each question by voice or text, then open the real form with your answers filled in and press Submit yourself.',

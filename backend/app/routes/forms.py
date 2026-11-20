@@ -80,17 +80,20 @@ async def gform(request: Request):
     except (ValidationError, ValueError):
         return JSONResponse({"error": "Please paste a Google Form link."}, status_code=400)
     edit = body.edit
+    needs_sign_in = ("This is the form’s editing link. Use the link you’d send to people who fill it in (Send → link)." if edit
+                     else "This form needs a Google sign-in, so AwaazForm can’t read it. Fill it on Google Forms directly.")
 
     def sign_in(p):
-        if p.hostname == "accounts.google.com" or "ServiceLogin" in p.path:
-            return ("This is the form’s editing link. Use the link you’d send to people who fill it in (Send → link)." if edit
-                    else "This form needs a Google sign-in, so AwaazForm can’t read it. Fill it on Google Forms directly.")
-        return None
+        return needs_sign_in if p.hostname == "accounts.google.com" or "ServiceLogin" in p.path else None
 
     try:
         res, final = await _follow(_start(body.url, GOOGLE_HOSTS), GOOGLE_HOSTS, sign_in,
                                    "Google redirected this form somewhere unexpected.", "Google redirected this form too many times.")
         try:
+            # Forms limited to signed-in users (one response per person, verified emails, one organisation)
+            # answer 401 with a "You must sign in" page instead of redirecting.
+            if res.status_code in (401, 403):
+                raise Fail(needs_sign_in)
             if res.status_code == 404:
                 raise Fail("No form was found at this link. Check that it’s complete.", 404)
             if res.status_code >= 400:
@@ -98,6 +101,8 @@ async def gform(request: Request):
             html = await _read(res)
         finally:
             await res.aclose()
+        if "FB_PUBLIC_LOAD_DATA_" not in html and "You must sign in" in html:
+            raise Fail(needs_sign_in)
         return {"html": html, "finalUrl": final}
     except Fail as e:
         return _fail(e)
@@ -136,6 +141,8 @@ async def msform(request: Request):
         res, final = await _follow(_start(body.url, MS_HOSTS), MS_HOSTS, sign_in,
                                    "Microsoft redirected this form somewhere unexpected.", "Microsoft redirected this form too many times.")
         try:
+            if res.status_code in (401, 403):
+                raise Fail(org_only)
             if res.status_code >= 400:
                 raise Fail("No form was found at this link. Check that it’s complete.", 404) if res.status_code == 404 \
                     else Fail(f"Microsoft Forms returned an error ({res.status_code}).", 502)

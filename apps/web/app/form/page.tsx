@@ -2,6 +2,7 @@
 
 import { createSession, googlePrefillUrl, microsoftFormUrl, microsoftPrefillUrl, parseMicrosoftFormUrl, type FormQuestion, type Session } from '@awaazform/core';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { Dialog } from '@/components/Dialog';
 import { Reveal, Wave } from '@/components/Motion';
 import { ReplicaSurface } from '@/components/ReplicaSurface';
@@ -152,6 +153,9 @@ function OpenInMicrosoft({ session }: { session: Session }) {
   );
 }
 
+/** Errors that mean the form only opens for signed-in people. */
+const SIGN_IN = /needs a Google sign-in|only accepts people signed in/;
+
 function PasteView({ reading, initialUrl, error, onSubmit }: { reading: boolean; initialUrl?: string; error?: string; onSubmit: (url: string) => void }) {
   const { t } = useSettings();
   const f = t.form;
@@ -183,6 +187,18 @@ function PasteView({ reading, initialUrl, error, onSubmit }: { reading: boolean;
             <p id="url-hint" className="text-sm text-muted">{f.hint}</p>
           )}
           {error && <p id="url-err" role="alert" className="rounded-[var(--r-12)] p-4 text-sm font-medium" style={{ background: 'var(--amber-100)', color: 'var(--amber-700)' }}>{localizeMessage(t, error)}</p>}
+          {error && SIGN_IN.test(error) && (
+            // AwaazForm's server can't sign in as the user, but the extension runs in their own signed-in browser.
+            <div className="grid gap-3 rounded-[var(--r-12)] border border-line bg-surface p-4 text-sm">
+              <p>{t.form.signin_hint}</p>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/extension" className="btn">{t.form.use_extension}</Link>
+                {initialUrl && /^https:\/\//.test(initialUrl.trim()) && (
+                  <a href={initialUrl.trim()} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">{t.form.open_form} ↗</a>
+                )}
+              </div>
+            </div>
+          )}
         </form>
       </Reveal>
 
