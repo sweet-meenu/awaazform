@@ -7,7 +7,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 trap 'kill 0' EXIT INT TERM
 
 if [[ "${1:-}" == "--prod" ]]; then
-  (cd "$root" && pnpm --filter web build)
+  # Serves the committed frontend/; run scripts/build-frontend.sh first if you changed the UI.
   echo "Starting http://localhost:3000 (site + API, one Python server)"
   cd "$root/backend" && exec uv run uvicorn app.main:app --host 127.0.0.1 --port 3000
 fi

@@ -75,19 +75,23 @@ Bolu **listens**, **writes down** what you said, **checks** it, and **reads it b
 
 ## Quick start
 
-This branch (`alternate`) is built as a **static site** (Next.js `output: 'export'`: plain HTML, CSS and JavaScript files in `apps/web/out`) that the **FastAPI** server (`backend/`) serves together with the API, on one port. At runtime it is one Python server; Node is only needed to build the site.
+On this branch (`alternate`) AwaazForm is **one Python server**: FastAPI (`backend/`) serves the site in `frontend/` (ready-built plain HTML, CSS and JavaScript, committed) together with the API. You only need **Python tooling ([uv](https://docs.astral.sh/uv/))** and a Groq API key. No Node, no npm/pnpm.
 
 ```bash
-corepack enable && pnpm install
-cd backend && uv sync && cp .env.example .env && cd ..   # add your GROQ_API_KEY to backend/.env
-(cd backend && uv run python -m app.download)            # optional: fetch the Kokoro voice now (~340 MB)
-pnpm demo                                                # build the site, then ONE server: http://localhost:3000
-pnpm dev:all                                             # while editing: next dev :3000 (hot reload) + API :8000
+cd backend
+uv sync                                  # Python 3.12 and packages (~200 MB)
+cp .env.example .env                     # put GROQ_API_KEY=gsk_... in backend/.env
+uv run python -m app.download            # optional: fetch the Kokoro voice now (~340 MB); else on first use
+uv run uvicorn app.main:app --port 3000  # open http://localhost:3000
 ```
+
+Changing the UI? Its source is in `apps/web` (React). Rebuild `frontend/` with `scripts/build-frontend.sh` (needs Node 22+ and pnpm: `corepack enable && pnpm install`), or use `pnpm dev:all` for hot reload while editing.
 
 Languages: **English, Hindi and Marathi**. Bolu speaks with the device's own voice when it has a good one (instant), otherwise with Kokoro on your machine (Marathi through its Hindi voice). It listens with the browser's own recognition in Chrome and Edge (you see the words as you speak), and with Groq Whisper elsewhere. The assistant and question translation use Groq. Without a key the app still works: you type your answers, and read-back uses the local voices.
 
 For a demo, set `TTS_PRELOAD` in `backend/.env` to the languages you will show, so they are loaded at startup. `GET /api/health` lists what is ready.
+
+Tests (need Node, like editing the UI):
 
 | Command | Purpose |
 |---|---|

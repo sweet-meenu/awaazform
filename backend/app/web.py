@@ -1,5 +1,5 @@
-"""Serves the web app: the static export of apps/web (`next build` with output: 'export'), on the same
-origin as the API. One Python server, no Node at runtime.
+"""Serves the web app: frontend/, the ready-built site (plain HTML, CSS and JavaScript), on the same
+origin as the API. One Python server; no Node needed to set up or run.
 
 Also does what Next.js did for the live site: security headers on every response, clean URLs (/form →
 form.html), the old /pdf and /docx links, and the share-target fallback."""
@@ -54,7 +54,7 @@ def mount(app: FastAPI) -> bool:
     """Adds the web routes if the export exists. Returns whether it did."""
     root: Path = config.WEB_DIR
     if not (root / "index.html").exists():
-        print(f"[web] no static export at {root}: run `pnpm --filter web build` (the API still works)")
+        print(f"[web] no site at {root}: run scripts/build-frontend.sh (the API still works)")
         return False
     root = root.resolve()
     app.add_middleware(SecurityHeaders)
