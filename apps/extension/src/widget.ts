@@ -483,7 +483,7 @@ async function submit(raw: string, source: 'typed' | 'spoken') {
   }
   const quick = raw.trim().split(/\s+/).length <= 4 && OPTION_TYPES.includes(q.type) && validateAnswer(q, raw).ok;
   // Clear short answers (email, phone, number, date, a short Latin-letter name) skip the AI too.
-  const instant = source === 'spoken' && !OPTION_TYPES.includes(q.type) ? quickValue(q.type, raw) : null;
+  const instant = source === 'spoken' && !OPTION_TYPES.includes(q.type) ? quickValue(q.type, raw, lang) : null;
   if (instant) raw = instant;
   const needsAi = source === 'spoken' ? !quick && !instant : OPTION_TYPES.includes(q.type) && !validateAnswer(q, raw).ok;
   if (needsAi) {
@@ -657,7 +657,8 @@ async function startLive() {
       setBolu('thinking');
       render();
       try {
-        await handleText(await transcribe(blob, lang, sttHint(current())));
+        const q0 = current();
+        await handleText(await transcribe(blob, lang, sttHint(q0, lang, q0 && qt[q0.id])));
       } catch (err) {
         const e = err as VoiceError;
         if (e.kind === 'ai') note = { text: `${t.session.ai_unavailable} (${localizeMessage(t, e.message)})`, tone: 'warn' };

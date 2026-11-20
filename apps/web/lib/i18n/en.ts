@@ -509,6 +509,7 @@ export const en = {
     check_yourself: 'Check yourself',
     options: 'Options',
     is_this_right: 'Is this right?',
+    form_gets: 'Goes in the form as: {value}',
     sign_prompt: 'Please sign in the box on screen, with your finger or mouse.',
     sign_pad: 'Signature pad. Draw your signature here.',
     sign_clear: 'Clear',

@@ -1,10 +1,15 @@
-"""Translates a form's own wording (labels, help text, options) into the user's language. Only the
-form's printed text is sent, never the user's answers."""
+"""Translates a form's own wording (labels, help text, options) into the user's language.
+
+mode "transliterate" writes a spoken answer (a name, an address) in the user's script for the read-back,
+so it can be read and pronounced; the form still gets the original. Clients send only answers the user
+spoke (their audio already went to speech-to-text), and nothing here is stored."""
 
 import json
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from typing import Literal
+
 from pydantic import BaseModel, Field, ValidationError
 
 from .. import config
@@ -18,6 +23,7 @@ router = APIRouter()
 class Input(BaseModel):
     language: str
     items: list[str] = Field(min_length=1, max_length=80)
+    mode: Literal["translate", "transliterate"] = "translate"
 
 
 @router.post("/api/translate")
@@ -41,6 +47,10 @@ async def translate(request: Request):
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": (
+                    f"Transliterate each value of the JSON object into the {LANGUAGE_NAMES[body.language]} script: write how it sounds, "
+                    "do not translate it (an English name stays the same name, written in that script). Keep digits, email addresses, "
+                    "punctuation and abbreviations as they are. Keep the same keys. Return only the JSON object.")
+                 if body.mode == "transliterate" else (
                     f"Translate each value of the JSON object into {LANGUAGE_NAMES[body.language]}. These are questions and answer options from a form "
                     "that someone will hear read aloud: use simple, natural, everyday words, and the polite form. Keep the same keys. Keep names of people, "
                     "organisations and products, email addresses, numbers and abbreviations (e.g. SISC, NA, PIN) as they are. Return only the JSON object.")},

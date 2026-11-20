@@ -32,6 +32,11 @@ def clean_transcript(data: dict) -> str:
     return text
 
 
+def _latin_only(text: str) -> bool:
+    letters = [c for c in text if c.isalpha()]
+    return bool(letters) and all(c.isascii() for c in letters)
+
+
 @router.post("/api/stt")
 async def stt(request: Request):
     if (r := rate_limited(request, "stt")):
@@ -53,7 +58,13 @@ async def stt(request: Request):
             data["language"] = lang
         if isinstance(prompt := form.get("prompt"), str) and prompt.strip():
             data["prompt"] = prompt[:600]  # the question being answered, never personal data
-        res = await groq_post("/audio/transcriptions", data=data, files={"file": ("answer.webm", blob, audio.content_type or "audio/webm")})
-        return {"text": clean_transcript(res.json())}
+        send = lambda d: groq_post("/audio/transcriptions", data=d, files={"file": ("answer.webm", blob, audio.content_type or "audio/webm")})  # noqa: E731
+        text = clean_transcript((await send(data)).json())
+        # Whisper can follow its hint's script instead of the speech: Marathi heard as English words.
+        # A non-English transcript with only Latin letters gets one more try without the hint.
+        if "prompt" in data and data.get("language", "en") != "en" and _latin_only(text):
+            data.pop("prompt")
+            text = clean_transcript((await send(data)).json()) or text
+        return {"text": text}
     except Exception as err:  # noqa: BLE001
         return error_response(err)

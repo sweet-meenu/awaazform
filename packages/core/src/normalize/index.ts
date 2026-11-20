@@ -378,7 +378,7 @@ export function looksUnfinished(text: string): boolean {
  * validates once taken out of the sentence, or a short name/word in Latin letters. Returns the value to
  * propose, or null to let the AI interpret it (several answers at once, other scripts, anything unclear).
  */
-export function quickValue(type: string, raw: string): string | null {
+export function quickValue(type: string, raw: string, language = 'en'): string | null {
   const v = raw.trim();
   if (!v || v.split(/\s+/).length > 12) return null;
   if (/\s(and|aur|और|आणि)\s|,/.test(v) && type !== 'email') return null; // possibly several answers
@@ -389,7 +389,9 @@ export function quickValue(type: string, raw: string): string | null {
     case 'number': return normalizeNumber(clean) ? clean : null;
     case 'date': return normalizeDate(clean) ? clean : null;
     case 'time': return normalizeTime(clean) ? clean : null;
-    case 'text': return /^[A-Za-z][A-Za-z .'-]{0,60}$/.test(clean) && clean.split(/\s+/).length <= 4 ? clean : null;
+    // Only for English: in other languages a short Latin-letter transcript is often a romanised sentence
+    // (“majhe naav Ayush aahe”) or a misheard one, and needs the AI to pick out the name.
+    case 'text': return language === 'en' && /^[A-Za-z][A-Za-z .'-]{0,60}$/.test(clean) && clean.split(/\s+/).length <= 4 ? clean : null;
     default: return null;
   }
 }

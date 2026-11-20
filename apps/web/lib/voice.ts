@@ -95,7 +95,11 @@ export const isSpeaking = () => speaking;
 
 let finishCurrent: (() => void) | null = null;
 
+/** Bumped by every new speech and every stop: audio still downloading for an older one is never played. */
+let generation = 0;
+
 export function stopSpeaking() {
+  generation++;
   current?.pause();
   current = null;
   // A paused <audio> never fires `ended`; resolve its promise so callers don't hang (barge-in).
@@ -108,24 +112,29 @@ export function stopSpeaking() {
 export async function speak(text: string, opts: { language: Language; rate?: number; voiceURI?: string }): Promise<void> {
   const busy = typeof speechSynthesis !== 'undefined' && (speechSynthesis.speaking || speechSynthesis.pending);
   stopSpeaking();
+  const mine = generation;
   // Chrome can silently drop an utterance queued in the same tick as cancel(); give it a moment.
   if (busy) await new Promise((r) => setTimeout(r, 60));
+  if (mine !== generation) return;
   speaking = true;
   try {
-    await speakInner(text, opts);
+    await speakInner(text, opts, () => mine === generation);
   } finally {
-    speaking = false;
+    if (mine === generation) speaking = false;
   }
 }
 
-async function speakInner(text: string, opts: { language: Language; rate?: number; voiceURI?: string }): Promise<void> {
+async function speakInner(text: string, opts: { language: Language; rate?: number; voiceURI?: string }, still: () => boolean): Promise<void> {
   // The server's voice when it has one for this language (the same voice on every device); otherwise
   // the device's own voice.
   if ((await serverVoices()).includes(opts.language)) {
     try {
       const res = await fetch(apiUrl('/api/tts'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, language: opts.language }) });
       if (res.ok) {
-        const url = URL.createObjectURL(await res.blob());
+        const blob = await res.blob();
+        // Stopped, or newer speech started, while this was being generated: never talk over it.
+        if (!still()) return;
+        const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.playbackRate = opts.rate ?? 1;
         current = audio;
@@ -144,6 +153,7 @@ async function speakInner(text: string, opts: { language: Language; rate?: numbe
   if (typeof speechSynthesis === 'undefined') return;
   // Browsers fill the voice list asynchronously; asking too early finds nothing and Live Mode went silent.
   await deviceVoicesReady();
+  if (!still()) return;
   const voice = pickVoice(opts.language, opts.voiceURI);
   // Still no voice for this language once the list has loaded: stay silent rather than read it with a
   // wrong-language voice. The words are on screen, and the session shows a notice about installing one.
@@ -205,8 +215,18 @@ export async function speakSentences(text: string, opts: { language: Language; r
 }
 
 /** What Whisper should expect for a question: its wording, options, and the shape of the answer. */
-export function sttHint(q: { label: string; type: string; options?: string[] } | undefined): string | undefined {
+export function sttHint(
+  q: { label: string; type: string; options?: string[] } | undefined,
+  language: Language = 'en',
+  translated?: { label?: string; options?: string[] },
+): string | undefined {
   if (!q) return undefined;
+  // Whisper follows the script of its hint: an English hint turns Marathi speech into English words
+  // or romanised gibberish. Other languages get the question in their own script, or no hint at all.
+  if (language !== 'en') {
+    const hint = [translated?.label, translated?.options?.length ? translated.options.join(', ') : ''].filter(Boolean).join('. ');
+    return hint && !/[A-Za-z]{3,}/.test(hint) ? hint : undefined;
+  }
   const shape: Record<string, string> = {
     email: 'Email address, spoken like: ayush dot shukla at gmail dot com → ayush.shukla@gmail.com.',
     phone: 'Phone number: 98440 12345.',

@@ -138,6 +138,10 @@ describe('Live Mode turn-taking helpers', () => {
     expect(quickValue('email', 'my email is ayush dot shukla at gmail dot com')).toBe('ayush.shukla@gmail.com');
     expect(quickValue('phone', 'it is 98440 12345')).toBe('98440 12345');
     expect(quickValue('text', 'My name is Ayush Shukla')).toBe('Ayush Shukla');
+    // Other languages: a short Latin transcript may be a romanised sentence; the AI picks the name out.
+    expect(quickValue('text', 'majhe naav Ayush aahe', 'mr')).toBeNull();
+    expect(quickValue('text', 'Ayush Shukla', 'hi')).toBeNull();
+    expect(quickValue('phone', '98440 12345', 'mr')).toBe('98440 12345');
     expect(quickValue('text', 'मेरा नाम आयुष है')).toBeNull(); // needs romanising: the AI does that
     expect(quickValue('text', "I'm Ayush and my email is a at b dot com")).toBeNull(); // several answers
     expect(quickValue('paragraph', 'Great teachers')).toBeNull();

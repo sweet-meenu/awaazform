@@ -50,3 +50,28 @@ export async function translateQuestions(questions: FormQuestion[], lang: Langua
   const tr = (s?: string) => (s && at.has(s) ? done![at.get(s)!] : s);
   return Object.fromEntries(questions.map((q) => [q.id, { label: tr(q.label)!, helpText: tr(q.helpText), options: q.options?.map((o) => tr(o)!) }]));
 }
+
+// ---- Answers in the user's script (read-back only) ----
+// “Ayush Shukla” shown and spoken as “आयुश शुक्ला” when the user speaks Hindi; the form still gets the
+// original. Only for answers the user spoke, and kept in memory only (never stored).
+const scripts = new Map<string, Promise<string | null>>();
+
+export function inScript(value: string, lang: Language): Promise<string | null> {
+  const key = `${lang}\u0000${value}`;
+  let p = scripts.get(key);
+  if (!p) {
+    p = fetch(apiUrl('/api/translate'), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang, mode: 'transliterate', items: [value.slice(0, 600)] }),
+    })
+      .then((r) => (r.ok ? (r.json() as Promise<{ translations?: string[] }>) : null))
+      .then((j) => {
+        const out = j?.translations?.[0]?.trim();
+        return out && out !== value && !/^[\x00-\x7F]*$/.test(out) ? out : null;
+      })
+      .catch(() => null);
+    p.then((v) => { if (v === null) scripts.delete(key); }); // retry next time if it failed
+    scripts.set(key, p);
+  }
+  return p;
+}

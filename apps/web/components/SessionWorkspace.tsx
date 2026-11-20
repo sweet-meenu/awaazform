@@ -18,7 +18,7 @@ import { SignaturePad } from '@/components/SignaturePad';
 import { fmt, LANGUAGE_META, localizeMessage, Rich, type Strings } from '@/lib/i18n';
 import { thinkingSound } from '@/lib/earcon';
 import { createListener, type Listener } from '@/lib/vad';
-import { translateQuestions, type QuestionTexts } from '@/lib/question-i18n';
+import { inScript, translateQuestions, type QuestionTexts } from '@/lib/question-i18n';
 import { saveSession } from '@/lib/session-store';
 import { useSettings } from '@/lib/settings';
 import type { SurfaceHandle } from '@/lib/surface';
@@ -115,6 +115,10 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const [turns, setTurns] = useState<Turn[]>([]);
   /** The form's questions in the interface language (shown and spoken; the form keeps its own words). */
   const [qt, setQt] = useState<QuestionTexts>({});
+  /** Spoken answers written in the user's script for the read-back (“value” → “आयुश शुक्ला”). */
+  const [scripted, setScripted] = useState<Record<string, string>>({});
+  const scriptedRef = useRef(scripted);
+  scriptedRef.current = scripted;
   const qtRef = useRef(qt);
   qtRef.current = qt;
   /** Conversational mode: all proposed answers are read back together, then filled on one yes. */
@@ -319,6 +323,21 @@ export function SessionWorkspace(props: WorkspaceProps) {
     return c ? c.session.questions.filter((x) => c.session.answers[x.id]?.status === 'proposed') : [];
   };
 
+  /**
+   * A spoken text answer in the user's own script, for reading back (the form keeps the original).
+   * Waits at most `wait` ms, so speech is never held up for long.
+   */
+  const toScript = useCallback(async (q: FormQuestion, wait = 1500): Promise<string | null> => {
+    const lang = latest.current.settings.language;
+    const a = ctlRef.current?.session.answers[q.id];
+    const v = a?.normalized;
+    if (!v || lang === 'en' || a.source !== 'spoken' || (q.type !== 'text' && q.type !== 'paragraph') || !/[A-Za-z]/.test(v)) return null;
+    const key = `${lang}\u0000${v}`;
+    if (scriptedRef.current[key]) return scriptedRef.current[key]!;
+    const p = inScript(v, lang).then((s) => { if (s) setScripted((m) => ({ ...m, [key]: s })); return s; });
+    return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), wait))]);
+  }, []);
+
   /** Reads back everything noted so far and asks for one yes. Nothing is filled until then. */
   const startReview = useCallback(async () => {
     const tt = latest.current.t, langNow = latest.current.settings.language;
@@ -326,7 +345,13 @@ export function SessionWorkspace(props: WorkspaceProps) {
     if (!list.length) return void say(tt.session.nothing_to_fill, true);
     setReviewing(true);
     const c = ctlRef.current!;
-    const items = list.map((x) => `${(qtRef.current[x.id]?.label ?? x.label).replace(/[\s:：-]+$/u, '')}: ${shownAnswer(x, c.session.answers[x.id]!.normalized ?? '', langNow, qtRef.current)}`).join('. ');
+    // Spoken answers in the user's script where ready (names read properly by the voice).
+    await Promise.all(list.map((x) => toScript(x, 1200)));
+    const said = (x: FormQuestion) => {
+      const v = c.session.answers[x.id]!.normalized ?? '';
+      return scriptedRef.current[`${langNow}\u0000${v}`] ?? shownAnswer(x, v, langNow, qtRef.current);
+    };
+    const items = list.map((x) => `${(qtRef.current[x.id]?.label ?? x.label).replace(/[\s:：-]+$/u, '')}: ${said(x)}`).join('. ');
     await say(`${tt.session.review_intro} ${items}. ${fmt(tt.session.review_ask, commandWords(langNow))}`, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [say]);
@@ -384,9 +409,18 @@ export function SessionWorkspace(props: WorkspaceProps) {
   advanceRef.current = advance;
 
   // ---- Answering ----
+
+  // The card shows the answer in the user's script as soon as it's ready, however it was proposed.
+  const curQ = session.questions[session.currentIndex];
+  const curA = curQ ? session.answers[curQ.id] : undefined;
+  useEffect(() => {
+    if (curQ && curA?.normalized && (curA.status === 'proposed' || curA.status === 'verified')) void toScript(curQ, 0);
+  }, [curQ, curA?.normalized, curA?.status, settings.language, toScript]);
+
   const readBackProposal = useCallback(async (question: FormQuestion) => {
     const a = ctlRef.current?.session.answers[question.id];
-    const shown = (v: string) => displayValue(question, v, latest.current.settings.language).replace(/[.!?।]+$/u, '');
+    const script = await toScript(question);
+    const shown = (v: string) => (script ?? displayValue(question, v, latest.current.settings.language)).replace(/[.!?।]+$/u, '');
     if (a?.status === 'proposed' && a.normalized && endMode()) {
       // Conversational: a short acknowledgement and on to the next question; the check comes at the end.
       await say(fmt(latest.current.t.session.got_it, { value: shown(shownAnswer(question, a.normalized, latest.current.settings.language, qtRef.current)) }));
@@ -421,7 +455,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
     // Typed answers are taken literally. The exception: a typed answer to an option question that matches
     // no option ("I study in college") goes to the AI to map onto one, still with read-back and confirm.
     // Clear short answers (an email, phone, number, date, or a short name in Latin letters) also skip it.
-    const instant = source === 'spoken' && !OPTION_TYPES.includes(cq.type) ? quickValue(cq.type, raw) : null;
+    const instant = source === 'spoken' && !OPTION_TYPES.includes(cq.type) ? quickValue(cq.type, raw, latest.current.settings.language) : null;
     if (instant) raw = instant;
     const needsAi = source === 'spoken' ? !quick && !instant : OPTION_TYPES.includes(cq.type) && !validateAnswer(cq, raw).ok;
     if (latest.current.aiOn && needsAi) {
@@ -563,7 +597,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
     }
     stopSpeaking();
     try {
-      recRef.current = await startRecording(lang, sttHint(q));
+      recRef.current = await startRecording(lang, sttHint(q, lang, q && qtRef.current[q.id]));
       if (q) ctl?.listening(q.id);
       setRecording(true);
       setNotice(null);
@@ -639,7 +673,8 @@ export function SessionWorkspace(props: WorkspaceProps) {
         setLive('thinking');
         try {
           const c0 = ctlRef.current;
-          const text = await transcribe(blob, latest.current.settings.language, sttHint(c0?.session.questions[c0.session.currentIndex]));
+          const q0 = c0?.session.questions[c0.session.currentIndex];
+          const text = await transcribe(blob, latest.current.settings.language, sttHint(q0, latest.current.settings.language, q0 && qtRef.current[q0.id]));
           sttFailures.current = 0;
           await handleText(text);
         } catch (err) {
@@ -830,7 +865,10 @@ export function SessionWorkspace(props: WorkspaceProps) {
                     <li key={x.id} className="flex items-center justify-between gap-3 rounded-[var(--r-12)] border border-line bg-surface p-3">
                       <span className="min-w-0">
                         <span className="block text-xs text-muted">{i + 1}. {qt[x.id]?.label ?? x.label}</span>
-                        <span className="block font-semibold break-words"><Answer q={x} v={a.normalized ?? ''} lang={lang} alt={t.session.signature_drawn} /></span>
+                        <span className="block font-semibold break-words">
+                          {scripted[`${lang}\u0000${a.normalized}`] ?? <Answer q={x} v={a.normalized ?? ''} lang={lang} alt={t.session.signature_drawn} />}
+                          {scripted[`${lang}\u0000${a.normalized}`] && <span className="ms-2 text-sm font-normal text-muted" lang="en">{a.normalized}</span>}
+                        </span>
                       </span>
                       <button type="button" className="btn btn-ghost flex-none" onClick={() => { setReviewing(false); void present(i); }}>{t.common.edit}</button>
                     </li>
@@ -877,7 +915,14 @@ export function SessionWorkspace(props: WorkspaceProps) {
                   className="grid gap-4 rounded-[var(--r-16)] border-2 p-5" style={{ borderColor: 'var(--violet-300)', background: 'var(--violet-100)' }}>
                   <div>
                     <p id="rb-h" className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>{t.session.is_this_right}</p>
-                    <p className="mt-1 text-2xl font-semibold break-words" aria-live="polite"><Answer q={q} v={answer.normalized} lang={lang} alt={t.session.signature_drawn} /></p>
+                    {scripted[`${lang}\u0000${answer.normalized}`] ? (
+                      <>
+                        <p className="mt-1 text-2xl font-semibold break-words" aria-live="polite" lang={lang}>{scripted[`${lang}\u0000${answer.normalized}`]}</p>
+                        <p className="mt-1 text-sm text-muted break-words" lang="en">{fmt(t.session.form_gets, { value: answer.normalized })}</p>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-2xl font-semibold break-words" aria-live="polite"><Answer q={q} v={answer.normalized} lang={lang} alt={t.session.signature_drawn} /></p>
+                    )}
                     {answer.translated && <p className="mt-1 text-xs text-muted">You said: “{answer.raw}”</p>}
                     {answer.source === 'profile' && <p className="mt-1 text-xs text-muted">{t.session.from_saved}</p>}
                   </div>
@@ -888,7 +933,8 @@ export function SessionWorkspace(props: WorkspaceProps) {
                 </motion.div>
               ) : answer.status === 'verified' ? (
                 <div className="flex items-center justify-between gap-3 rounded-[var(--r-16)] p-4" style={{ background: 'var(--green-100)', color: 'var(--green-600)' }}>
-                  <span className="font-semibold break-words">✓ <Answer q={q} v={answer.normalized ?? ''} lang={lang} alt={t.session.signature_drawn} /></span>
+                  <span className="font-semibold break-words">✓ {scripted[`${lang}\u0000${answer.normalized}`] ?? <Answer q={q} v={answer.normalized ?? ''} lang={lang} alt={t.session.signature_drawn} />}
+                    {scripted[`${lang}\u0000${answer.normalized}`] && <span className="ms-2 text-sm font-normal opacity-80" lang="en">{answer.normalized}</span>}</span>
                   <button type="button" className="btn-quiet !text-current underline" onClick={() => ctl?.edit(q.id)}>{t.common.edit}</button>
                 </div>
               ) : answer.status === 'confirmed' && answer.error ? (
