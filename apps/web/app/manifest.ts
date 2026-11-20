@@ -1,5 +1,8 @@
 import type { MetadataRoute } from 'next';
 
+// Generated once at build time (the site is a static export).
+export const dynamic = 'force-static';
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',

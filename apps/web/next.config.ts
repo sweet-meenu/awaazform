@@ -22,12 +22,15 @@ const directives = (frameAncestors: string) => [
 ].join('; ');
 const csp = directives("'self'");
 
-// The API is the FastAPI app in backend/. Proxying /api/* keeps one origin for the browser (CSP
-// connect-src 'self', no CORS), and the backend's own guard still checks who is calling.
+// The site is exported as static files (apps/web/out) that the FastAPI app in backend/ serves along
+// with the API, on one origin: one Python server, no Node at runtime. FastAPI then sets the security
+// headers and redirects below (backend/app/web.py). `next dev` still uses them, and proxies /api/* to
+// the API so development keeps one origin too.
 const BACKEND_URL = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@awaazform/core'],
+  ...(isDev ? {} : { output: 'export' as const }),
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${BACKEND_URL}/api/:path*` }];
   },
@@ -64,5 +67,12 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
+// The static export has no server of its own: FastAPI (backend/app/web.py) applies these instead.
+if (!isDev) {
+  delete nextConfig.rewrites;
+  delete nextConfig.redirects;
+  delete nextConfig.headers;
+}
 
 export default nextConfig;

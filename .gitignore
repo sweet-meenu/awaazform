@@ -31,3 +31,6 @@ backend/.venv/
 backend/models/
 backend/.env
 __pycache__/
+
+# Static export of the web app (served by backend/)
+apps/web/out/

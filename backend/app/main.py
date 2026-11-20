@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from . import config
+from . import web
 from .guard import GuardMiddleware
 from .routes import chat, extract, forms, stt, translate, tts
 from .tts import engines
@@ -39,3 +40,8 @@ async def health():
         "ttsLanguages": engines.languages(),
         "warm": engines.status(),
     }
+
+
+# The site itself (static export of apps/web), on the same origin as the API. Mounted last, so its
+# catch-all route never shadows /api/*.
+_web_mounted = web.mount(app)

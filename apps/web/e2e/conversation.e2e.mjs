@@ -40,7 +40,7 @@ try {
   await page.getByRole('heading', { name: 'Mobile number' }).waitFor({ timeout: 15_000 });
 
   // Nothing is on the form yet.
-  assert.equal(await replica().locator('[data-qid="q1"] [data-input]').inputValue(), '', 'not filled before the summary');
+  assert.equal(await replica().locator('[data-qid="g1"] [data-input]').inputValue(), '', 'not filled before the summary');
 
   await page.getByRole('button', { name: /Review answers \(2\)/ }).click();
   await page.getByRole('heading', { name: 'Here’s what I have' }).waitFor();
@@ -52,8 +52,8 @@ try {
   await page.getByText(/Let’s carry on/).first().waitFor({ timeout: 20_000 });
   await page.getByRole('heading', { name: 'Mobile number' }).waitFor({ timeout: 15_000 });
   assert.equal(await page.getByText(/press Submit yourself/).count() > 0 && await page.getByText(/I filled 2 answers/).count() > 0, false, 'does not wrap up early');
-  assert.equal(await replica().locator('[data-qid="q1"] [data-input]').inputValue(), 'Sunita Devi');
-  assert.equal(await replica().locator('[data-qid="q2"] [data-input]').inputValue(), 'sunita.devi@example.com');
+  assert.equal(await replica().locator('[data-qid="g1"] [data-input]').inputValue(), 'Sunita Devi');
+  assert.equal(await replica().locator('[data-qid="g2"] [data-input]').inputValue(), 'sunita.devi@example.com');
   assert.deepEqual(problems, [], 'no page errors');
   console.log('CONVERSATION E2E PASS');
 } catch (err) {

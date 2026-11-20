@@ -34,7 +34,7 @@ try {
   await page.getByRole('button', { name: /^Start, filling for/ }).click();
 
   const replica = page.frameLocator('iframe[title="Replica of the form being filled"]');
-  const q1 = replica.locator('[data-qid="q1"] [data-input]');
+  const q1 = replica.locator('[data-qid="g1"] [data-input]');
 
   // Q1: propose, then prove nothing is written before confirm (AC-03).
   await page.getByLabel('Your answer').fill('Sunita Devi');
@@ -45,7 +45,7 @@ try {
   await shot('proposed');
 
   await page.getByRole('button', { name: /Confirm/ }).click();
-  await replica.locator('[data-qid="q1"]').getByText('Verified').waitFor();
+  await replica.locator('[data-qid="g1"]').getByText('Verified').waitFor();
   assert.equal(await q1.inputValue(), 'Sunita Devi');
 
   // Remember prompt (J2) → yes.
@@ -61,7 +61,7 @@ try {
   await page.getByRole('button', { name: 'Check answer' }).click();
   await page.getByText('sunita@example.com').first().waitFor();
   await page.getByRole('button', { name: /Confirm/ }).click();
-  await replica.locator('[data-qid="q2"]').getByText('Verified').waitFor();
+  await replica.locator('[data-qid="g2"]').getByText('Verified').waitFor();
   await page.getByRole('button', { name: 'No', exact: true }).click(); // decline remembering (AC-08)
 
   // Q3 phone, Q4 Hindi date.
@@ -69,7 +69,7 @@ try {
   await page.getByLabel('Your answer').fill('98440 12345');
   await page.getByRole('button', { name: 'Check answer' }).click();
   await page.getByRole('button', { name: /Confirm/ }).click();
-  await replica.locator('[data-qid="q3"]').getByText('Verified').waitFor();
+  await replica.locator('[data-qid="g3"]').getByText('Verified').waitFor();
   const remember = page.getByRole('button', { name: 'No', exact: true });
   if (await remember.isVisible().catch(() => false)) await remember.click();
 
@@ -78,8 +78,8 @@ try {
   await page.getByRole('button', { name: 'Check answer' }).click();
   await page.getByText('12 March 1978').first().waitFor();
   await page.getByRole('button', { name: /Confirm/ }).click();
-  await replica.locator('[data-qid="q4"]').getByText('Verified').waitFor();
-  assert.equal(await replica.locator('[data-qid="q4"] [data-input]').inputValue(), '1978-03-12');
+  await replica.locator('[data-qid="g4"]').getByText('Verified').waitFor();
+  assert.equal(await replica.locator('[data-qid="g4"] [data-input]').inputValue(), '1978-03-12');
   await page.waitForTimeout(600);
   await shot('session-progress');
 

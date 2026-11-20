@@ -26,8 +26,27 @@ export const MOCK_FORM = {
   ],
 };
 
+// Google's raw page data (FB_PUBLIC_LOAD_DATA_) for the questions above. The API returns the form's page
+// and the browser parses it with packages/core, so the mock is a page too: the real parser runs.
+// Question ids come out as g1…g13 (core prefixes Google item ids with "g").
+const T = { short: 0, paragraph: 1, choice: 2, dropdown: 3, checkbox: 4, scale: 5, date: 9, time: 10, file: 13 };
+const code = { text: T.short, email: T.short, phone: T.short, number: T.short, paragraph: T.paragraph, choice: T.choice, yesno: T.choice,
+  dropdown: T.dropdown, checkbox: T.checkbox, scale: T.scale, date: T.date, time: T.time };
+function rawItem(q, n) {
+  const opts = (q.options ?? []).map((o) => [o]);
+  const input = [1000 + n, opts.length ? opts : null, q.required ? 1 : 0];
+  if (q.type === 'number') input[4] = [[1, 7]];
+  if (q.type === 'scale') input[3] = ['very hard', 'very easy'];
+  if (q.type === 'date') input[7] = [0, 1];
+  if (q.type === 'time') input[6] = [0];
+  const type = q.support === 'unsupported' ? T.file : code[q.type];
+  return [n, q.label, q.type === 'scale' ? null : q.helpText ?? null, type, [input]];
+}
+const RAW = [null, [null, MOCK_FORM.questions.map((q, i) => rawItem(q, i + 1)), null, null, null, null, null, null, MOCK_FORM.title], null, MOCK_FORM.title];
+const HTML = `<html><body><script>var FB_PUBLIC_LOAD_DATA_ = ${JSON.stringify(RAW)};</script></body></html>`;
+
 export async function mockGoogleForm(page) {
-  await page.route('**/api/gform', (route) => route.fulfill({ json: MOCK_FORM }));
+  await page.route('**/api/gform', (route) => route.fulfill({ json: { html: HTML, finalUrl: MOCK_FORM_URL } }));
 }
 
 /** Opens /form with a clean slate (keeping only `settings`) and scans the mock form. */

@@ -75,14 +75,14 @@ Bolu **listens**, **writes down** what you said, **checks** it, and **reads it b
 
 ## Quick start
 
-This branch (`alternate`) runs as two apps: the **Next.js** interface and a **FastAPI** API (`backend/`). Next.js proxies `/api/*` to the API, so the browser still talks to one origin.
+This branch (`alternate`) is built as a **static site** (Next.js `output: 'export'`: plain HTML, CSS and JavaScript files in `apps/web/out`) that the **FastAPI** server (`backend/`) serves together with the API, on one port. At runtime it is one Python server; Node is only needed to build the site.
 
 ```bash
 corepack enable && pnpm install
 cd backend && uv sync && cp .env.example .env && cd ..   # add your GROQ_API_KEY to backend/.env
 (cd backend && uv run python -m app.download)            # optional: fetch every local voice now (~2 GB)
-pnpm dev:all                                             # API :8000 + web :3000 (http://localhost:3000)
-pnpm demo                                                # the same with a production build: smoother for presenting
+pnpm demo                                                # build the site, then ONE server: http://localhost:3000
+pnpm dev:all                                             # while editing: next dev :3000 (hot reload) + API :8000
 ```
 
 Speech output runs **on your machine**: Kokoro for English and Hindi, Meta's MMS-TTS for Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Malayalam, Punjabi and Assamese (Nepali uses the Hindi voice). Every device then hears the same voice, even browsers with no Indian-language voices. Speech-to-text, the assistant and question translation still use Groq. Without a key the app still works: you type your answers, and read-back uses the local voices.

@@ -29,7 +29,7 @@ try {
   await page.getByRole('button', { name: /Sunday/ }).click();
   await confirm('Sunday');
   await page.waitForTimeout(300);
-  assert.equal(await replica().locator('[data-qid="q6"] input[value="Sunday"]').isChecked(), true, 'Sunday chosen on the form');
+  assert.equal(await replica().locator('[data-qid="g6"] input[value="Sunday"]').isChecked(), true, 'Sunday chosen on the form');
 
   // Multi-select: collect, then propose once.
   await step(7);

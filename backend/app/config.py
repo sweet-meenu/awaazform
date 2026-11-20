@@ -29,7 +29,10 @@ MAX_AUDIO_BYTES = _int("MAX_AUDIO_BYTES", 2_000_000)
 MAX_CHAT_CHARS = _int("MAX_CHAT_INPUT_CHARS", 2000)
 
 # Who may call the API: the web app's origins, and the AwaazForm extension (pinned by ID if set).
-ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if o.strip()]
+ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000").split(",") if o.strip()]
+
+# The web app's static export, served by this server (apps/web: `next build`).
+WEB_DIR = Path(os.environ.get("WEB_DIR", BACKEND.parent / "apps" / "web" / "out"))
 EXTENSION_IDS = [s.strip() for s in os.environ.get("AWAAZ_EXTENSION_IDS", "").split(",") if s.strip()]
 
 # Local speech output.
