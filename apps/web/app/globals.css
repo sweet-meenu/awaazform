@@ -182,6 +182,14 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spac
   margin-inline: auto;
 }
 @media (min-width: 640px) { .container-x { width: min(100% - 48px, 1120px); } }
+/* Working screens (a session, the PDF box review) and the nav: two panels side by side need the room
+   on wide screens; reading pages keep the narrower .container-x column. */
+.container-wide {
+  width: min(100% - 2 * max(16px, env(safe-area-inset-left), env(safe-area-inset-right)), 1600px);
+  margin-inline: auto;
+}
+@media (min-width: 640px) { .container-wide { width: min(100% - 48px, 1600px); } }
+@media (min-width: 1280px) { .container-wide { width: min(100% - 96px, 1600px); } }
 
 /* Buttons: 44px minimum target (WCAG 2.5.8 / PRD §7) */
 .btn {
@@ -211,6 +219,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spac
   display: inline-flex; align-items: center; gap: 6px;
   padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
   background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text);
+  /* A status badge stays on one line (“सत्यापित” broke into a letter per line in narrow columns). */
+  white-space: nowrap; flex: none;
 }
 .chip-ok { background: var(--green-100); color: var(--green-600); border-color: currentColor; }
 .chip-warn { background: var(--amber-100); color: var(--amber-700); border-color: currentColor; }

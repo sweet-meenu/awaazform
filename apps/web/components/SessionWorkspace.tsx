@@ -905,7 +905,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const answering = !!q && !!answer && q.support !== 'unsupported' && !offer && answer.status !== 'proposed' && answer.status !== 'verified' && !(answer.status === 'confirmed' && answer.error);
 
   return (
-    <div className="container-x py-6">
+    <div className="container-wide py-6">
       {/* ---- Top bar ---- */}
       <div className="card mb-6 grid gap-4 p-4 md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

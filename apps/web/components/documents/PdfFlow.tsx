@@ -117,7 +117,7 @@ export function PdfFlow({ file, onPick }: { file?: File; onPick: (f: File) => vo
   if (step.s === 'review') {
     const included = step.candidates.filter((c) => c.include).length;
     return (
-      <div className="container-x py-8">
+      <div className="container-wide py-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-medium tracking-wide text-muted uppercase">{D.review_eyebrow}</p>
