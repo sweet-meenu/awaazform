@@ -290,7 +290,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
       return void say(parts.filter(Boolean).join(' '));
     }
     if (cq.options?.length && cq.type !== 'yesno') parts.push(optionsIntro(tt, tq?.options ?? cq.options), isMulti(cq) ? tt.session.multi_hint : '');
-    if (cq.type === 'signature' && a.status !== 'proposed') parts.push(tt.session.sign_prompt);
+    if (cq.type === 'signature' && a.status !== 'proposed' && a.status !== 'verified') parts.push(tt.session.sign_prompt);
     if (cq.support === 'unsupported') {
       parts.push(tt.session.not_supported, localizeMessage(tt, cq.supportReason));
       // Live Mode never waits on a question AwaazForm can't fill (a file upload, say): it says so and moves on.
@@ -423,7 +423,9 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const readBackProposal = useCallback(async (question: FormQuestion) => {
     const a = ctlRef.current?.session.answers[question.id];
     const script = await toScript(question);
-    const shown = (v: string) => (script ?? displayValue(question, v, latest.current.settings.language)).replace(/[.!?।]+$/u, '');
+    // A signature has no text to read out: say “your signature” instead of an empty “Got it: .”
+    const shown = (v: string) => (question.type === 'signature' ? latest.current.t.session.signature_drawn
+      : script ?? displayValue(question, v, latest.current.settings.language)).replace(/[.!?।]+$/u, '');
     if (a?.status === 'proposed' && a.normalized && endMode()) {
       // Conversational: a short acknowledgement and on to the next question; the check comes at the end.
       await say(fmt(latest.current.t.session.got_it, { value: shown(shownAnswer(question, a.normalized, latest.current.settings.language, qtRef.current)) }));
