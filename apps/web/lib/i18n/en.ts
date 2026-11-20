@@ -160,6 +160,10 @@ export const en = {
   },
 
   form: {
+    live_tab: 'Google Form',
+    live_title: 'The real Google Form, filled with your confirmed answers',
+    live_note: 'Each answer you confirm appears here in the real form (your confirmed answers go to Google in its link). ID numbers such as Aadhaar or PAN are left out: type them in the form. When everything is in, press Submit inside the form yourself.',
+    live_loading: 'Loading the form…',
     signin_hint: 'Forms that need a sign-in can still be filled by voice: the AwaazForm extension works inside your own browser, where you are already signed in. Open the form there and tap Bolu.',
     use_extension: 'Get the extension',
     eyebrow: 'Google Forms · Microsoft Forms',

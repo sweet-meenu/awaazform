@@ -70,6 +70,7 @@ export default function FormPage() {
         surfaceLabel={t.form.surface}
         surfaceRef={surfaceRef}
         surface={<ReplicaSurface handleRef={surfaceRef} />}
+        panes={platformOf(step.session) === 'google' ? [{ id: 'live', label: t.form.live_tab, render: (s) => <GoogleFormPane session={s} /> }] : undefined}
         actions={(s) => (platformOf(s) === 'microsoft' ? <OpenInMicrosoft session={s} /> : <OpenInGoogle session={s} />)}
         intro={
           <p className="rounded-[var(--r-12)] px-3 py-2 text-sm" style={{ background: 'var(--violet-100)', color: 'var(--accent-text)' }}>
@@ -84,6 +85,31 @@ export default function FormPage() {
   }
 
   return <PasteView reading={step.s === 'reading'} initialUrl={step.url} error={step.s === 'paste' ? step.error : undefined} onSubmit={scan} />;
+}
+
+/**
+ * The real Google Form in Google's embed view, pre-filled with the confirmed answers. It reloads when
+ * a new answer is confirmed (the link changes), so the user sees their form fill up and presses Submit
+ * inside it. AwaazForm never submits. Loaded only while this tab is open.
+ */
+function GoogleFormPane({ session }: { session: Session }) {
+  const { t } = useSettings();
+  const src = googlePrefillUrl(session, { embedded: true });
+  const [loaded, setLoaded] = useState<string | null>(null);
+  if (!src) return null;
+  return (
+    <div className="grid">
+      <p className="border-b border-line px-4 py-3 text-sm text-muted">{t.form.live_note}</p>
+      <div className="relative">
+        {loaded !== src && (
+          <p role="status" className="absolute inset-x-0 top-6 text-center text-sm text-muted">{t.form.live_loading}</p>
+        )}
+        {/* key: a new link (another confirmed answer) loads the form again with it filled in. */}
+        <iframe key={src} src={src} title={t.form.live_title} onLoad={() => setLoaded(src)}
+          className="block h-[78vh] min-h-[520px] w-full bg-white" referrerPolicy="no-referrer" />
+      </div>
+    </div>
+  );
 }
 
 function OpenInGoogle({ session }: { session: Session }) {

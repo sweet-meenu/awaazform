@@ -87,6 +87,11 @@ export interface WorkspaceProps {
   actions?: ReactNode | ((s: Session) => ReactNode);
   /** Shown before the session starts, under the scan summary. */
   intro?: ReactNode;
+  /**
+   * Extra tabs beside the form and activity, e.g. the real Google Form. Rendered only while their tab is
+   * open, so nothing in them loads until the user asks for it.
+   */
+  panes?: { id: string; label: string; render: (s: Session) => ReactNode }[];
   onDiscard: () => void;
 }
 
@@ -98,7 +103,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const [session, setSession] = useState<Session>(initial);
   const [started, setStarted] = useState(!!props.startImmediately);
   const [cards, setCards] = useState<TimelineCard[]>([]);
-  const [tab, setTab] = useState<'form' | 'activity'>('form');
+  const [tab, setTab] = useState<string>('form');
   const [input, setInput] = useState('');
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
@@ -1017,6 +1022,9 @@ export function SessionWorkspace(props: WorkspaceProps) {
         <section aria-label={t.session.form_and_activity} className="grid min-w-0 gap-3">
           <div role="tablist" aria-label={t.session.view} className="tabbar">
             <button role="tab" id="tab-form" aria-controls="panel-form" aria-selected={tab === 'form'} onClick={() => setTab('form')}>{props.surfaceLabel}</button>
+            {props.panes?.map((p) => (
+              <button key={p.id} role="tab" id={`tab-${p.id}`} aria-controls={`panel-${p.id}`} aria-selected={tab === p.id} onClick={() => setTab(p.id)}>{p.label}</button>
+            ))}
             <button role="tab" id="tab-activity" aria-controls="panel-activity" aria-selected={tab === 'activity'} onClick={() => setTab('activity')}>
               {t.session.activity} {cards.length > 0 && <span className="chip ms-1 !px-2 !py-0">{cards.length}</span>}
             </button>
@@ -1025,6 +1033,11 @@ export function SessionWorkspace(props: WorkspaceProps) {
           <div id="panel-form" role="tabpanel" aria-labelledby="tab-form" hidden={tab !== 'form'} className="card overflow-hidden p-0">
             {props.surface}
           </div>
+          {props.panes?.map((p) => (
+            <div key={p.id} id={`panel-${p.id}`} role="tabpanel" aria-labelledby={`tab-${p.id}`} hidden={tab !== p.id} className="card overflow-hidden p-0">
+              {tab === p.id && p.render(session)}
+            </div>
+          ))}
           <div id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" hidden={tab !== 'activity'}>
             <Timeline cards={cards} title={t.timeline.title} />
           </div>

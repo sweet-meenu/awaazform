@@ -12,7 +12,8 @@ const directives = (frameAncestors: string) => [
   "font-src 'self'",
   "media-src 'self' blob:",
   `connect-src 'self'${isDev ? ' ws:' : ''}`,
-  "frame-src 'self'",
+  // The real Google Form, shown beside the questions on /form (pre-filled with confirmed answers).
+  "frame-src 'self' https://docs.google.com",
   "worker-src 'self' blob:",
   `frame-ancestors ${frameAncestors}`,
   "base-uri 'self'",

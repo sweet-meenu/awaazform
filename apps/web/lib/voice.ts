@@ -125,8 +125,12 @@ export async function speak(text: string, opts: { language: Language; rate?: num
 }
 
 async function speakInner(text: string, opts: { language: Language; rate?: number; voiceURI?: string }, still: () => boolean): Promise<void> {
-  // The server's voice when it has one for this language (the same voice on every device); otherwise
-  // the device's own voice.
+  // 1. The device's own voice for this language: it starts instantly (no audio to generate first).
+  await deviceVoicesReady();
+  if (!still()) return;
+  const own = pickVoice(opts.language, opts.voiceURI, false);
+  if (own) return speakWithDevice(text, opts, own);
+  // 2. Our server's voice (Kokoro / MMS-TTS): every language, the same on every device.
   if ((await serverVoices()).includes(opts.language)) {
     try {
       const res = await fetch(apiUrl('/api/tts'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, language: opts.language }) });
@@ -147,20 +151,23 @@ async function speakInner(text: string, opts: { language: Language; rate?: numbe
         return;
       }
     } catch {
-      // fall through to speechSynthesis
+      // fall through to a borrowed device voice
     }
   }
-  if (typeof speechSynthesis === 'undefined') return;
-  // Browsers fill the voice list asynchronously; asking too early finds nothing and Live Mode went silent.
-  await deviceVoicesReady();
   if (!still()) return;
-  const voice = pickVoice(opts.language, opts.voiceURI);
-  // Still no voice for this language once the list has loaded: stay silent rather than read it with a
-  // wrong-language voice. The words are on screen, and the session shows a notice about installing one.
-  if (!voice && opts.language !== 'en') return;
-  await new Promise<void>((resolve) => {
+  // 3. A device voice that reads the same script (Hindi for Marathi), or English. Otherwise stay silent
+  // rather than read the text with a wrong-language voice: the words are on screen, and the session
+  // shows a notice about installing a voice.
+  const borrowed = pickVoice(opts.language, opts.voiceURI, true);
+  if (!borrowed && opts.language !== 'en') return;
+  return speakWithDevice(text, opts, borrowed);
+}
+
+function speakWithDevice(text: string, opts: { language: Language; rate?: number }, voice: SpeechSynthesisVoice | undefined): Promise<void> {
+  if (typeof speechSynthesis === 'undefined') return Promise.resolve();
+  return new Promise<void>((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = LANGUAGE_META[opts.language]?.locale ?? 'en-IN';
+    u.lang = voice?.lang ?? LANGUAGE_META[opts.language]?.locale ?? 'en-IN';
     u.rate = opts.rate ?? 1;
     if (voice) u.voice = voice;
     u.onend = u.onerror = () => resolve();
@@ -188,14 +195,22 @@ function deviceVoicesReady(): Promise<void> {
 /** Languages without their own voice can borrow one that reads the same script. */
 const BORROW: Partial<Record<Language, string>> = { mr: 'hi', ne: 'hi', as: 'bn' };
 
-function pickVoice(lang: Language, voiceURI?: string): SpeechSynthesisVoice | undefined {
-  const voices = speechSynthesis.getVoices();
+/** eSpeak (the default voices on many Linux systems) is robotic; our server voices sound far better. */
+const ROBOTIC = /espeak/i;
+
+/**
+ * The device voice for a language. `borrow`: also accept one that reads the same script (Hindi for
+ * Marathi). A voice the user chose in Settings wins when it speaks the language.
+ */
+function pickVoice(lang: Language, voiceURI?: string, borrow = true): SpeechSynthesisVoice | undefined {
+  if (typeof speechSynthesis === 'undefined') return undefined;
+  const voices = speechSynthesis.getVoices().filter((v) => !ROBOTIC.test(v.name) && !ROBOTIC.test(v.voiceURI));
   if (voiceURI) {
     const chosen = voices.find((v) => v.voiceURI === voiceURI);
     if (chosen && chosen.lang.toLowerCase().startsWith(lang)) return chosen;
   }
   const by = (code: string) => voices.find((v) => v.lang.toLowerCase().startsWith(code) && /IN|NP|PK/i.test(v.lang)) ?? voices.find((v) => v.lang.toLowerCase().startsWith(code));
-  return by(lang) ?? (BORROW[lang] ? by(BORROW[lang]!) : undefined);
+  return by(lang) ?? (borrow && BORROW[lang] ? by(BORROW[lang]!) : undefined);
 }
 
 /** Whether this device can read the language aloud (the server's voice, its own, or a borrowed one). */

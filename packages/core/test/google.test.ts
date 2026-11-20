@@ -158,6 +158,19 @@ describe('googlePrefillUrl', () => {
     expect(url.searchParams.has('entry.103')).toBe(false);
   });
 
+  it('embedded: Google’s embed view, without government ID numbers', () => {
+    let s = createSession({ id: 's', formTitle: form.title, questions: form.questions });
+    s = answer(s, 'Full name', 'Sunita Devi');
+    const nameQ = form.questions.find((x) => x.label === 'Full name')!;
+    // Mark it the way Aadhaar/PAN questions are marked, to check it is left out of the embedded link.
+    const asId = { ...s, questions: s.questions.map((q) => (q.id === nameQ.id ? { ...q, support: 'manual' as const } : q)) };
+    const url = new URL(googlePrefillUrl(s, { embedded: true })!);
+    expect(url.searchParams.get('embedded')).toBe('true');
+    expect(url.searchParams.get('entry.101')).toBe('Sunita Devi');
+    expect(new URL(googlePrefillUrl(asId, { embedded: true })!).searchParams.has('entry.101')).toBe(false);
+    expect(new URL(googlePrefillUrl(asId)!).searchParams.get('entry.101')).toBe('Sunita Devi'); // the hand-off link keeps it
+  });
+
   it('returns null for sessions that are not Google Forms', () => {
     expect(googlePrefillUrl(createSession({ id: 's', formTitle: 'x', questions: [] }))).toBeNull();
   });

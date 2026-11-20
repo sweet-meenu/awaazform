@@ -175,13 +175,20 @@ export function splitOptions(value: string, options: string[]): string[] {
 }
 
 /** A pre-filled responder link carrying every verified answer. Unverified answers are left out. */
-export function googlePrefillUrl(s: Session): string | null {
+/**
+ * The form's link with verified answers filled in. `embedded`: for showing the live form inside
+ * AwaazForm (Google's embed view), refreshed after each confirmed answer; government ID numbers
+ * (Aadhaar, PAN: support 'manual') are left out there, so they never sit in a URL that reloads by itself.
+ */
+export function googlePrefillUrl(s: Session, opts: { embedded?: boolean } = {}): string | null {
   const first = s.questions.find((q) => q.source.kind === 'google-form');
   if (!first || first.source.kind !== 'google-form') return null;
   const params = new URLSearchParams({ usp: 'pp_url' });
+  if (opts.embedded) params.set('embedded', 'true');
   for (const q of s.questions) {
     const a = s.answers[q.id];
     if (q.source.kind !== 'google-form' || !q.source.entryId || a?.status !== 'verified' || !a.normalized) continue;
+    if (opts.embedded && q.support === 'manual') continue;
     const key = q.source.entryId === GOOGLE_EMAIL_ENTRY ? GOOGLE_EMAIL_ENTRY : `entry.${q.source.entryId}`;
     if (q.type === 'checkbox' || q.type === 'multichoice') {
       for (const v of splitOptions(a.normalized, q.options ?? [])) params.append(key, v);
