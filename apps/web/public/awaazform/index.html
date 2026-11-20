@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://cdnjs.cloudflare.com; frame-src https://docs.google.com https://forms.google.com https://accounts.google.com; object-src 'none'; base-uri 'none'">
+  <title>AwaazForm – Voice-guided forms</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="owl" aria-hidden="true">🦉</div>
+      <div>
+        <p class="brand-name" data-i18n="appName">AwaazForm</p>
+        <p class="tagline" data-i18n="tagline"></p>
+      </div>
+    </div>
+    <nav class="navlinks" aria-label="Page sections">
+      <a href="#demo" data-i18n="navDemo"></a>
+      <a href="#forms" data-i18n="navForms"></a>
+      <a href="#storage" data-i18n="navStorage"></a>
+      <a href="#faq" data-i18n="navFaq"></a>
+    </nav>
+    <div class="toolbar">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en" aria-pressed="true">English</button>
+        <button type="button" data-lang-btn="hi" aria-pressed="false">हिन्दी</button>
+      </div>
+      <button type="button" class="tool" id="btnAutoRead" aria-pressed="true">🔊 <span data-i18n="autoRead"></span></button>
+      <button type="button" class="tool" id="btnContrast" aria-pressed="false">🌓 <span data-i18n="contrast"></span></button>
+      <button type="button" class="tool" id="btnLarge" aria-pressed="false">🔠 <span data-i18n="largeText"></span></button>
+      <button type="button" class="tool" id="btnShortcuts" aria-pressed="true">⌨️ <span data-i18n="shortcuts"></span></button>
+      <button type="button" class="tool" id="btnHelp">❓ <span data-i18n="help"></span></button>
+      <button type="button" class="btn small" id="btnSignIn" data-i18n="signIn" hidden></button>
+    </div>
+  </header>
+
+  <div id="live" class="sr-only" aria-live="polite"></div>
+  <div id="toast" class="toast" aria-hidden="true"></div>
+
+  <main id="main" tabindex="-1">
+
+    <!-- SCREEN 1: START -->
+    <section id="screen-start" class="screen">
+      <div class="hero" id="top">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow"></p>
+          <h2 class="hero-title" tabindex="-1"><span data-i18n="heroHead1"></span> <span class="grad" data-i18n="heroHead2"></span></h2>
+          <p class="hero-sub" data-i18n="heroSub"></p>
+          <div class="hero-cta">
+            <a class="btn primary big" href="#forms" data-i18n="heroCta1"></a>
+            <button type="button" class="btn big" data-go="paste" data-i18n="heroCta2"></button>
+          </div>
+          <p class="trust" data-i18n="trustLine"></p>
+        </div>
+        <aside class="steps-panel" aria-label="How it works">
+          <p class="panel-label" data-i18n="panelLabel"></p>
+          <ol class="steps">
+            <li><span class="sn">01</span><div><h3 data-i18n="step1T"></h3><p data-i18n="step1D"></p></div></li>
+            <li><span class="sn">02</span><div><h3 data-i18n="step2T"></h3><p data-i18n="step2D"></p></div></li>
+            <li><span class="sn">03</span><div><h3 data-i18n="step3T"></h3><p data-i18n="step3D"></p></div></li>
+          </ol>
+        </aside>
+      </div>
+
+      <section id="demo" class="sect">
+        <p class="eyebrow" data-i18n="demoEyebrow"></p>
+        <h3 class="section-title" data-i18n="demoH"></h3>
+        <div class="demo" aria-hidden="true">
+          <div class="demo-bar">
+            <span></span><span></span><span></span>
+            <em data-i18n="demoTitle"></em>
+            <b class="verified">4 / 9</b>
+          </div>
+          <div class="demo-body">
+            <div class="demo-form">
+              <div class="demo-field"><small data-i18n="demoName"></small><strong>Sunita Devi</strong><span class="tick">✓</span></div>
+              <div class="demo-field"><small data-i18n="demoEmail"></small><strong>sunita@example.com</strong><span class="tick">✓</span></div>
+              <div class="demo-field active"><small data-i18n="demoDob"></small><strong>12/03/1978</strong><span class="chip" data-i18n="demoCheck"></span></div>
+              <div class="demo-say" data-i18n="demoSaid"></div>
+            </div>
+            <div class="demo-log">
+              <p class="log" data-i18n="demoLog1"></p>
+              <p class="log" data-i18n="demoLog2"></p>
+              <p class="log now" data-i18n="demoLog3"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="forms" class="sect">
+        <p class="eyebrow" data-i18n="formsEyebrow"></p>
+        <h3 class="section-title" data-i18n="formsTitle"></h3>
+
+        <div id="resumeBox" class="resume" hidden>
+          <p><strong data-i18n="resumeTitle"></strong></p>
+          <div class="row">
+            <button type="button" id="btnResume" class="btn primary" data-i18n="resume"></button>
+            <button type="button" id="btnDeleteSaved" class="btn ghost" data-i18n="deleteSaved"></button>
+          </div>
+        </div>
+
+        <form id="linkForm" class="link-card" novalidate>
+          <h3 class="link-title" data-i18n="linkTitle"></h3>
+          <p class="note" data-i18n="linkDesc"></p>
+          <div class="link-row">
+            <label for="formLink" class="sr-only" data-i18n="linkTitle"></label>
+            <input id="formLink" class="input" type="url" inputmode="url" autocomplete="off" data-i18n-placeholder="linkPlaceholder" placeholder="https://">
+            <button type="submit" class="btn primary" data-i18n="linkCheck"></button>
+          </div>
+          <p id="linkMsg" class="link-msg" role="status"></p>
+          <div id="linkPanel" class="embedded-workspace" hidden>
+            <section class="embedded-form-panel">
+              <div class="workspace-heading"><strong>Google Form</strong><span id="formFrameStatus" class="workspace-status">Waiting for form…</span></div>
+              <iframe id="googleFormFrame" title="Google Form" allow="microphone" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              <p class="workspace-note">The form is displayed here. AwaazForm needs its Chrome extension enabled to read and fill questions inside this embedded form.</p>
+            </section>
+            <section class="embedded-assistant-panel" aria-label="AwaazForm voice assistant">
+              <div class="workspace-heading"><strong>🦉 AwaazForm Assistant</strong><span id="assistantConnection" class="assistant-ready">Connecting…</span></div>
+              <div class="assistant-welcome"><p class="assistant-kicker">VOICE ASSISTANT</p><h3 id="embeddedQuestionNumber">Ready to help</h3><p id="embeddedQuestion">Paste a Google Forms responder link to begin. The assistant will read each question aloud.</p></div>
+              <div id="embeddedOptions" class="embedded-options" hidden></div>
+              <label class="assistant-answer-label" for="embeddedAnswer">Your answer</label>
+              <textarea id="embeddedAnswer" class="input assistant-answer" rows="3" placeholder="Speak or type your answer"></textarea>
+              <div class="assistant-actions">
+                <button type="button" class="btn" id="btnReadEmbedded">🔊 Read question</button>
+                <button type="button" class="btn" id="btnSpeakEmbedded">🎙 Speak answer</button>
+                <button type="button" class="btn primary" id="btnFillEmbedded">Fill & next →</button>
+              </div>
+              <div class="assistant-actions assistant-secondary-actions">
+                <button type="button" class="btn ghost small" id="btnNextEmbedded">Next section</button>
+                <button type="button" class="btn ghost small" id="btnSubmitEmbedded">Submit form</button>
+                <button type="button" class="btn ghost small" id="btnCloseEmbedded">Close</button>
+              </div>
+              <p id="embeddedAssistantMessage" class="workspace-note" role="status">Install or reload the AwaazForm Chrome extension, then refresh this page if the assistant cannot connect.</p>
+            </section>
+          </div>
+          <p class="note" data-i18n="linkNote"></p>
+        </form>
+
+        <div class="extension-callout">
+          <div><strong>Want to fill the original Google Form directly?</strong><p class="note">Install the AwaazForm Chrome extension, open your Google Form in Chrome, then open the AwaazForm side panel from the Extensions toolbar. The original form stays on screen while the assistant reads and fills it.</p></div>
+          <a class="btn primary" href="/extension" target="_blank" rel="noopener">Extension setup guide</a>
+        </div>
+
+        <div class="card-grid">
+          <button type="button" class="choice-card c1" data-sample="scholar">
+            <span class="big-emoji" aria-hidden="true">🎓</span>
+            <span class="ct" data-i18n="sampleScholar"></span>
+            <span class="cd" data-i18n="sampleScholarDesc"></span>
+          </button>
+          <button type="button" class="choice-card c2" data-sample="camp">
+            <span class="big-emoji" aria-hidden="true">🏥</span>
+            <span class="ct" data-i18n="sampleCamp"></span>
+            <span class="cd" data-i18n="sampleCampDesc"></span>
+          </button>
+          <button type="button" class="choice-card c3" data-go="paste">
+            <span class="big-emoji" aria-hidden="true">📝</span>
+            <span class="ct" data-i18n="pasteTitle"></span>
+            <span class="cd" data-i18n="pasteDesc"></span>
+          </button>
+          <button type="button" class="choice-card c4" data-go="paste">
+            <span class="big-emoji" aria-hidden="true">📁</span>
+            <span class="ct" data-i18n="uploadTitle"></span>
+            <span class="cd" data-i18n="uploadDesc"></span>
+          </button>
+        </div>
+
+        <label class="save-row">
+          <input type="checkbox" id="saveProgress">
+          <span data-i18n="saveProgress"></span>
+        </label>
+        <p class="note" data-i18n="saveNote"></p>
+      </section>
+
+      <section id="follow" class="sect">
+        <p class="eyebrow" data-i18n="followEyebrow"></p>
+        <div class="split">
+          <h3 class="section-title" data-i18n="followTitle"></h3>
+          <div>
+            <p data-i18n="followP1"></p>
+            <p data-i18n="followP2"></p>
+          </div>
+        </div>
+        <div class="platform-grid">
+          <article class="plat"><h4 data-i18n="cardSampleT"></h4><p data-i18n="cardSampleD"></p></article>
+          <article class="plat"><h4 data-i18n="cardPasteT"></h4><p data-i18n="cardPasteD"></p></article>
+          <article class="plat"><h4 data-i18n="cardFileT"></h4><p data-i18n="cardFileD"></p></article>
+          <article class="plat more"><h4 data-i18n="cardMoreT"></h4><p data-i18n="cardMoreD"></p></article>
+        </div>
+      </section>
+
+      <section class="sect duo" aria-label="Highlights">
+        <article class="fcard"><h3 data-i18n="convTitle"></h3><p data-i18n="convD"></p></article>
+        <article class="fcard"><h3 data-i18n="onlyTitle"></h3><p data-i18n="onlyD"></p></article>
+      </section>
+
+      <section id="storage" class="sect">
+        <p class="eyebrow" data-i18n="storeEyebrow"></p>
+        <h3 class="section-title" data-i18n="storeTitle"></h3>
+        <p class="note" data-i18n="storeD"></p>
+        <div class="store-box">
+          <dl class="kv">
+            <div><dt data-i18n="storeWhereL"></dt><dd data-i18n="storeWhereV"></dd></div>
+            <div><dt data-i18n="storeWhatL"></dt><dd data-i18n="storeWhatV"></dd></div>
+            <div><dt data-i18n="storeExpL"></dt><dd data-i18n="storeExpV"></dd></div>
+          </dl>
+          <div class="store-status">
+            <p id="storeStatus" role="status"></p>
+            <button type="button" id="btnStoreDelete" class="btn small" data-i18n="storeDelete"></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="sect">
+        <p class="eyebrow" data-i18n="faqEyebrow"></p>
+        <h3 class="section-title" data-i18n="faqTitle"></h3>
+        <details class="faq"><summary data-i18n="faq1Q"></summary><p data-i18n="faq1A"></p></details>
+        <details class="faq"><summary data-i18n="faq2Q"></summary><p data-i18n="faq2A"></p></details>
+        <details class="faq"><summary data-i18n="faq3Q"></summary><p data-i18n="faq3A"></p></details>
+        <details class="faq"><summary data-i18n="faq4Q"></summary><p data-i18n="faq4A"></p></details>
+        <details class="faq"><summary data-i18n="faq5Q"></summary><p data-i18n="faq5A"></p></details>
+      </section>
+    </section>
+
+    <!-- SCREEN 2: PASTE OR UPLOAD -->
+    <section id="screen-paste" class="screen" hidden>
+      <h2 tabindex="-1" data-i18n="pasteH"></h2>
+      <p class="note" data-i18n="pasteHelp"></p>
+      <form id="pasteForm" class="panel" novalidate>
+        <label for="pasteText" class="label" data-i18n="pasteLabel"></label>
+        <textarea id="pasteText" class="input" rows="10"></textarea>
+        <div class="upload">
+          <label for="fileInput" class="label" data-i18n="uploadBtn"></label>
+          <input id="fileInput" class="file-input" type="file" accept=".txt,.pdf,text/plain,application/pdf">
+          <p id="uploadMsg" class="note" role="status"></p>
+        </div>
+        <p id="pasteErr" class="error" role="alert"></p>
+        <div class="nav-row">
+          <button type="button" class="btn ghost" data-go="start" data-i18n="back"></button>
+          <button type="submit" class="btn primary" data-i18n="startBtn"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- SCREEN 3: GUIDED FLOW -->
+    <section id="screen-flow" class="screen" hidden>
+      <div class="flow-head">
+        <p id="formTitle" class="form-name"></p>
+        <p id="qCount" class="qcount"></p>
+      </div>
+      <div class="progress" id="progressBar" role="progressbar" aria-label="Form progress" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+        <div id="progressFill"></div>
+      </div>
+      <div id="dots" class="dots" aria-hidden="true"></div>
+
+      <article class="question-card">
+        <h2 id="qTitle" tabindex="-1"></h2>
+        <p><span id="qReq" class="badge"></span></p>
+        <p id="qHint" class="hint"></p>
+        <p id="flagNote" class="flag" hidden></p>
+        <p><button type="button" class="btn ghost" id="btnListenQ">🔊 <span data-i18n="listen"></span></button></p>
+
+        <div id="answerArea">
+          <div class="mic-zone">
+            <button type="button" id="btnMic" class="mic" aria-pressed="false">
+              <span aria-hidden="true">🎤</span>
+              <span id="micLabel"></span>
+            </button>
+            <div id="waves" class="waves" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p id="micStatus" class="mic-status"></p>
+          </div>
+
+          <form id="answerForm" novalidate>
+            <div id="selectField" hidden>
+              <div id="optionGrid" class="option-grid"></div>
+              <label for="answerSelect" class="label" data-i18n="chooseOption"></label>
+              <select id="answerSelect" class="input"></select>
+            </div>
+            <div id="textField">
+              <label for="answerInput" class="label" data-i18n="typeLabel"></label>
+              <input id="answerInput" class="input" autocomplete="off" aria-describedby="qHint fieldError">
+            </div>
+            <p id="fieldError" class="error" role="alert"></p>
+            <div class="nav-row">
+              <button type="button" id="btnBack" class="btn ghost" data-i18n="back"></button>
+              <button type="submit" class="btn primary" data-i18n="next"></button>
+            </div>
+          </form>
+        </div>
+
+        <div id="readback" class="readback" hidden>
+          <p class="rb-title" data-i18n="readbackTitle"></p>
+          <p id="rbValue" class="rb-value" tabindex="-1"></p>
+          <p id="rbQ" class="rb-q"></p>
+          <div class="row big">
+            <button type="button" id="btnConfirm" class="btn primary big" data-i18n="confirm"></button>
+            <button type="button" id="btnEdit" class="btn" data-i18n="edit"></button>
+            <button type="button" id="btnRepeat" class="btn" data-i18n="repeat"></button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- SCREEN 4: REVIEW -->
+    <section id="screen-review" class="screen" hidden>
+      <h2 tabindex="-1" data-i18n="reviewTitle"></h2>
+      <p class="note" data-i18n="reviewSub"></p>
+      <p id="reviewSummary" class="pill"></p>
+      <p id="missingNote" class="error" role="status"></p>
+      <ul id="reviewList" class="review-list"></ul>
+      <div class="row">
+        <button type="button" id="btnReviewBack" class="btn ghost" data-i18n="backToQ"></button>
+        <button type="button" id="btnFinish" class="btn primary big" data-i18n="finish"></button>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: DONE -->
+    <section id="screen-done" class="screen" hidden>
+      <div class="owl owl-hero" aria-hidden="true">🦉</div>
+      <h2 tabindex="-1" data-i18n="doneTitle"></h2>
+      <p class="note" data-i18n="doneSub"></p>
+      <p id="fillNote" class="note" role="status" hidden></p>
+      <div class="row">
+        <button type="button" id="btnOpenForm" class="btn primary big" hidden data-i18n="openFilled"></button>
+        <button type="button" id="btnPdf" class="btn" data-i18n="exportPdf"></button>
+        <button type="button" id="btnCopy" class="btn" data-i18n="copy"></button>
+        <button type="button" id="btnNew" class="btn ghost" data-i18n="startOver"></button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-grid">
+      <div>
+        <p class="brand-name" data-i18n="appName">AwaazForm</p>
+        <p class="foot-tag" data-i18n="footTag"></p>
+      </div>
+      <div>
+        <h4 data-i18n="footProduct"></h4>
+        <a href="#forms" data-i18n="footForms"></a>
+        <a href="#demo" data-i18n="footDemo"></a>
+        <a href="#faq" data-i18n="footFaq"></a>
+      </div>
+      <div>
+        <h4 data-i18n="footProject"></h4>
+        <a href="#top" data-i18n="footTeam"></a>
+        <a href="#top" data-i18n="footKat"></a>
+      </div>
+      <div>
+        <h4 data-i18n="footSupport"></h4>
+        <a href="#storage" data-i18n="footStorage"></a>
+        <a href="#faq" data-i18n="footPrivacy"></a>
+        <a href="#faq" data-i18n="footAccess"></a>
+      </div>
+    </div>
+    <p class="foot-bottom" data-i18n="footCopy"></p>
+  </footer>
+
+  <!-- Dialogs -->
+  <dialog id="consentDlg" aria-labelledby="consentTitle">
+    <h2 id="consentTitle" data-i18n="consentTitle"></h2>
+    <p data-i18n="consentText"></p>
+    <div class="row">
+      <button type="button" id="consentAgree" class="btn primary" data-i18n="consentAgree"></button>
+      <button type="button" class="btn ghost" data-close data-i18n="consentNo"></button>
+    </div>
+  </dialog>
+
+  <dialog id="helpDlg" aria-labelledby="helpTitle">
+    <h2 id="helpTitle" data-i18n="helpTitle"></h2>
+    <p data-i18n="helpBody"></p>
+    <p data-i18n="shortcutsList"></p>
+    <button type="button" class="btn primary" data-close data-i18n="close"></button>
+  </dialog>
+
+  <dialog id="signDlg" aria-labelledby="signTitle" class="auth-dialog">
+    <div class="auth-head">
+      <div><p class="eyebrow">AWAAZFORM ACCOUNT</p><h2 id="signTitle">Sign in or create your profile</h2></div>
+      <button type="button" class="btn ghost small" data-close aria-label="Close">✕</button>
+    </div>
+    <p class="note">Save your basic details once. AwaazForm can suggest them when a supported form asks for the same information.</p>
+    <div id="authSignedOut">
+      <div class="auth-tabs" role="tablist"><button type="button" class="btn small primary" data-auth-tab="login" aria-selected="true">Sign in</button><button type="button" class="btn small" data-auth-tab="register" aria-selected="false">Create account</button></div>
+      <form id="loginForm" class="auth-form">
+        <label class="label" for="loginEmail">Email address</label><input class="input" id="loginEmail" name="loginEmail" type="email" autocomplete="username" required>
+        <label class="label" for="loginPassword">Password</label><input class="input" id="loginPassword" name="loginPassword" type="password" autocomplete="current-password" required>
+        <p class="error" id="loginError" role="alert"></p><button class="btn primary" type="submit">Sign in</button>
+      </form>
+      <form id="registerForm" class="auth-form" hidden>
+        <div class="profile-grid">
+          <label class="auth-field">Full name<input class="input" name="full_name" required minlength="2" maxlength="120" autocomplete="name"></label>
+          <label class="auth-field">Email address<input class="input" name="email" type="email" required autocomplete="email"></label>
+          <label class="auth-field">Password (8+ characters)<input class="input" name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+          <label class="auth-field">Mobile number<input class="input" name="mobile_number" type="tel" autocomplete="tel"></label>
+          <label class="auth-field">Date of birth<input class="input" name="date_of_birth" type="date" autocomplete="bday"></label>
+          <label class="auth-field">Preferred language<select class="input" name="preferred_language"><option value="en">English</option><option value="hi">हिन्दी</option></select></label>
+          <label class="auth-field wide">Address<input class="input" name="address" autocomplete="street-address"></label>
+          <label class="auth-field">City<input class="input" name="city" autocomplete="address-level2"></label>
+          <label class="auth-field">State<input class="input" name="state" autocomplete="address-level1"></label>
+          <label class="auth-field">PIN code<input class="input" name="pin_code" inputmode="numeric" autocomplete="postal-code"></label>
+        </div>
+        <p class="error" id="registerError" role="alert"></p><button class="btn primary" type="submit">Create account</button>
+      </form>
+    </div>
+    <div id="authSignedIn" hidden>
+      <p id="authWelcome" class="pill"></p>
+      <form id="profileForm" class="auth-form">
+        <div class="profile-grid">
+          <label class="auth-field">Full name<input class="input" name="full_name" required></label>
+          <label class="auth-field">Email address<input class="input" name="email" type="email" disabled></label>
+          <label class="auth-field">Mobile number<input class="input" name="mobile_number" type="tel"></label>
+          <label class="auth-field">Date of birth<input class="input" name="date_of_birth" type="date"></label>
+          <label class="auth-field wide">Address<input class="input" name="address"></label>
+          <label class="auth-field">City<input class="input" name="city"></label>
+          <label class="auth-field">State<input class="input" name="state"></label>
+          <label class="auth-field">PIN code<input class="input" name="pin_code" inputmode="numeric"></label>
+          <label class="auth-field">Preferred language<select class="input" name="preferred_language"><option value="en">English</option><option value="hi">हिन्दी</option></select></label>
+        </div>
+        <p class="error" id="profileError" role="alert"></p><p class="success" id="profileSaved" role="status"></p>
+        <div class="row"><button class="btn primary" type="submit">Save profile</button><button class="btn" type="button" id="btnLogout">Sign out</button></div>
+      </form>
+    </div>
+  </dialog>
+
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <article id="printSheet" class="print-sheet"></article>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

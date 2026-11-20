@@ -1,3 +1,4 @@
+
 import type { NextConfig } from 'next';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -6,14 +7,14 @@ const isDev = process.env.NODE_ENV !== 'production';
 const directives = (frameAncestors: string) => [
   "default-src 'self'",
   // 'wasm-unsafe-eval': Live Mode's voice detector (Silero via ONNX) is WebAssembly; it allows compiling wasm only, not eval.
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "media-src 'self' blob:",
-  `connect-src 'self'${isDev ? ' ws:' : ''}`,
-  "frame-src 'self'",
-  "worker-src 'self' blob:",
+  `connect-src 'self' https://cdnjs.cloudflare.com${isDev ? ' ws:' : ''}`,
+  "frame-src 'self' https://docs.google.com https://forms.google.com https://accounts.google.com",
+  "worker-src 'self' blob: https://cdnjs.cloudflare.com",
   `frame-ancestors ${frameAncestors}`,
   "base-uri 'self'",
   "form-action 'self'",
