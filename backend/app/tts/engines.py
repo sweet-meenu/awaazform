@@ -29,6 +29,9 @@ MMS_CODES = {
 }
 
 
+LANG_MARK = re.compile(r"\([a-z]{2,3}(?:-[a-z]{2,4})?\)")
+
+
 def _download(url: str, dest: Path) -> Path:
     if dest.exists() and dest.stat().st_size > 0:
         return dest
@@ -70,7 +73,12 @@ class Kokoro:
     def synth(self, text: str, language: str) -> bytes:
         lang, voice = KOKORO_LANGS[language]
         with self._lock:
-            samples, rate = self._load().create(text, voice=voice(), speed=1.0, lang=lang)
+            model = self._load()
+            # espeak-ng marks a switch to another language inside the text with "(en)" … "(hi)" (Hindi
+            # with "Borivali" in it), and Kokoro would read the marker aloud as "en". Drop the markers;
+            # the English words keep their English sounds.
+            phonemes = LANG_MARK.sub("", model.tokenizer.phonemize(text, lang))
+            samples, rate = model.create(phonemes, voice=voice(), speed=1.0, lang=lang, is_phonemes=True)
         return wav_bytes(samples, rate)
 
 
