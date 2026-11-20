@@ -903,6 +903,9 @@ export function SessionWorkspace(props: WorkspaceProps) {
                 </motion.div>
               </AnimatePresence>
 
+              {/* Live Mode's conversation stays on screen through every step: the read-back, Confirm/Edit,
+                  saved-detail offers and errors appear under it instead of replacing it. */}
+              {live !== 'off' && <LivePanel state={live} level={level} t={t} turns={turns} words={commandWords(lang)} onInterrupt={interrupt} />}
               {q.support === 'unsupported' ? (
                 <p className="rounded-[var(--r-12)] p-4 text-sm" style={{ background: 'var(--amber-100)', color: 'var(--amber-700)' }}>
                   {t.session.not_supported} {localizeMessage(t, q.supportReason)}
@@ -950,9 +953,6 @@ export function SessionWorkspace(props: WorkspaceProps) {
               ) : (
                 <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); void submit(input, 'typed'); }}>
                   <label htmlFor="answer" className="sr-only">{t.session.your_answer}</label>
-                  {live !== 'off' ? (
-                    <LivePanel state={live} level={level} t={t} turns={turns} words={commandWords(lang)} onInterrupt={interrupt} />
-                  ) : null}
                   {OPTION_TYPES.includes(q.type) && optionsOf(q).length > 0 && (
                     <OptionPicker key={q.id} q={q} t={t} shown={qt[q.id]?.options} disabled={!!busy} onPick={(v) => void submit(v, 'typed')} />
                   )}
