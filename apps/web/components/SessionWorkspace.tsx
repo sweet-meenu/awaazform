@@ -135,6 +135,8 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const runnerRef = useRef<ToolRunner | null>(null);
   const recRef = useRef<Awaited<ReturnType<typeof startRecording>> | null>(null);
   const liveRef = useRef<Listener | null>(null);
+  /** Each spoken or typed turn's number; a newer turn or a new question makes older ones stale. */
+  const turnRef = useRef(0);
   const sttFailures = useRef(0);
   /** The start of a sentence the user hasn't finished yet (“my email is…”), waiting for the rest. */
   const pendingText = useRef<{ text: string; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -265,6 +267,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
 
   // ---- Presenting a question ----
   const present = useCallback(async (index: number) => {
+    turnRef.current++; // a new question: anything an older turn still wants to say is stale
     const c = ctlRef.current;
     if (!c) return;
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
@@ -435,6 +438,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
   }, [say, advance]);
 
   const submit = useCallback(async (raw: string, source: 'typed' | 'spoken') => {
+    const turn = ++turnRef.current;
     const c = ctlRef.current, runner = runnerRef.current;
     const cq = c?.session.questions[c.session.currentIndex];
     if (!c || !runner || !cq || !raw.trim()) return;
@@ -469,6 +473,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
       // Live Mode speaks the reply sentence by sentence as it streams in.
       let speech = Promise.resolve();
       const onSentence = isLive ? (s: string) => {
+        if (turn !== turnRef.current) return; // the conversation has moved on: don't say this late
         if (hum) clearTimeout(hum);
         if (hold) clearTimeout(hold);
         speech = speech.then(() => say(s));
@@ -483,6 +488,9 @@ export function SessionWorkspace(props: WorkspaceProps) {
         if (hold) clearTimeout(hold);
         await speech;
         setBusy(null);
+        // Superseded (the user spoke again, or Bolu moved to another question meanwhile): its proposals
+        // stay in the list for review, but it doesn't steer the conversation any more.
+        if (turn !== turnRef.current) return;
         const pending = proposed.filter((id) => c.session.answers[id]?.status === 'proposed');
         const others = pending.filter((id) => id !== cq.id).length;
         if (c.session.answers[cq.id]?.status === 'proposed') {

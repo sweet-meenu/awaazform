@@ -123,11 +123,13 @@ export async function assistantTurn(
   const messages: ChatMsg[] = [...history, { role: 'user', content: hide(utterance.slice(0, 2000)) }];
   let streamed = false;
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const split = onSentence ? sentenceSplitter((s) => { streamed = true; onSentence(reveal(s)); }) : null;
+    // Once a value is proposed, the app reads it back and asks for confirmation itself: the model's own
+    // “is this right?” would repeat it, late, over the next question. So its words are not passed on.
+    const split = onSentence ? sentenceSplitter((s) => { if (proposed.length) return; streamed = true; onSentence(reveal(s)); }) : null;
     const msg = await step(ctx, messages, false, split ? (d) => split.push(d) : undefined);
     split?.flush();
     messages.push({ role: 'assistant', content: msg.content ?? null, tool_calls: msg.tool_calls });
-    if (!msg.tool_calls?.length) return { reply: msg.content ? reveal(msg.content) : null, history: messages, proposed, streamed };
+    if (!msg.tool_calls?.length) return { reply: msg.content && !proposed.length ? reveal(msg.content) : null, history: messages, proposed, streamed };
     for (const tc of msg.tool_calls) {
       // Real values go back in locally, just before the runner validates the call.
       const args = reveal(tc.function.arguments);
