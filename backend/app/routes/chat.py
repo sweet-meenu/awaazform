@@ -2,6 +2,7 @@
 forwards the minimal context to Groq. Streams as small server-sent events when asked."""
 
 import json
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -36,6 +37,7 @@ async def chat(request: Request):
         stream = bool(body.get("stream"))
         system = [
             {"role": "system", "content": system_prompt(str(body.get("formTitle", ""))[:200], str(body.get("profileLabel", ""))[:60], language)},
+            {"role": "system", "content": f"Today's date: {date.today().isoformat()} ({date.today():%A})."},
             {"role": "system", "content": f"Current question: {question_context(body.get('question'), int(position.get('index', 0) or 0), int(position.get('total', 0) or 0))}"},
         ]
         if outline:
