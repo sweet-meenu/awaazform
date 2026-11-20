@@ -3,6 +3,7 @@
 import { LANGUAGES, type Language } from '@awaazform/core';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { en, LANGUAGE_META, loadStrings, type Strings } from './i18n';
+import { prepareVoice } from './voice';
 
 export interface Settings {
   language: Language;
@@ -72,6 +73,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let live = true;
     void loadStrings(settings.language).then((s) => live && setT(s));
+    prepareVoice(settings.language);
     return () => { live = false; };
   }, [settings.language]);
 

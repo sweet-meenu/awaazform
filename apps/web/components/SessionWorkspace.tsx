@@ -131,6 +131,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
   const runnerRef = useRef<ToolRunner | null>(null);
   const recRef = useRef<Awaited<ReturnType<typeof startRecording>> | null>(null);
   const liveRef = useRef<Listener | null>(null);
+  const sttFailures = useRef(0);
   /** The start of a sentence the user hasn't finished yet (“my email is…”), waiting for the rest. */
   const pendingText = useRef<{ text: string; timer: ReturnType<typeof setTimeout> } | null>(null);
   const historyRef = useRef<ChatMsg[]>([]);
@@ -610,6 +611,7 @@ export function SessionWorkspace(props: WorkspaceProps) {
   }, [addTurn, advance, confirm, decideOffer, explain, fillAll, present, readBackProposal, say, startReview, submit]);
 
   const startLive = async () => {
+    sttFailures.current = 0;
     if (!aiOn) return setNotice(t.session.ai_unavailable);
     if (!voiceInputSupported()) return setNotice(t.session.voice_unavailable);
     stopSpeaking();
@@ -638,10 +640,17 @@ export function SessionWorkspace(props: WorkspaceProps) {
         try {
           const c0 = ctlRef.current;
           const text = await transcribe(blob, latest.current.settings.language, sttHint(c0?.session.questions[c0.session.currentIndex]));
+          sttFailures.current = 0;
           await handleText(text);
         } catch (err) {
           const e = err as VoiceError;
-          if (e.kind === 'ai') { setNotice(`${t.session.ai_unavailable} (${localizeMessage(latest.current.t, e.message)})`); stopLive(); return; }
+          if (e.kind === 'ai') {
+            setNotice(`${t.session.ai_unavailable} (${localizeMessage(latest.current.t, e.message)})`);
+            // A busy moment (rate limit, network) passes: keep listening. End the call only when retrying
+            // can't help (no key, rejected key) or it keeps failing.
+            sttFailures.current += 1;
+            if ([401, 403, 503].includes(e.status) || sttFailures.current >= 3) { stopLive(); return; }
+          }
         } finally {
           liveRef.current?.setPaused(false);
           setLive((s) => (s === 'off' ? 'off' : 'listening'));

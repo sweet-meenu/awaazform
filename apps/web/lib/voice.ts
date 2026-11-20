@@ -11,7 +11,8 @@ export function voiceInputSupported(): boolean {
 }
 
 export class VoiceError extends Error {
-  constructor(message: string, public kind: 'permission' | 'unsupported' | 'ai' | 'empty') {
+  /** `status`: the API's HTTP status for 'ai' errors (429 = busy, try again; 401/503 = not set up). */
+  constructor(message: string, public kind: 'permission' | 'unsupported' | 'ai' | 'empty', public status = 0) {
     super(message);
   }
 }
@@ -67,15 +68,28 @@ export async function transcribe(audio: Blob, language: Language, hint?: string)
   if (hint) body.set('prompt', hint.slice(0, 600));
   const res = await fetch(apiUrl('/api/stt'), { method: 'POST', body });
   const json = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
-  if (!res.ok) throw new VoiceError(json.error ?? 'Transcription failed', 'ai');
+  if (!res.ok) throw new VoiceError(json.error ?? 'Transcription failed', 'ai', res.status);
   if (!json.text) throw new VoiceError("I didn't catch that", 'empty');
   return json.text;
 }
 
 let current: HTMLAudioElement | null = null;
-let ttsCheck: Promise<boolean> | null = null;
-const groqTtsAvailable = () =>
-  (ttsCheck ??= fetch(apiUrl('/api/tts')).then((r) => r.json()).then((j: { available?: boolean }) => !!j.available).catch(() => false));
+let ttsCheck: Promise<string[]> | null = null;
+/** Languages the server can speak (local Kokoro / MMS-TTS voices, or Groq's English one). */
+// Fetched on first use (the extension sets the API address first); a failed check is retried next time.
+const serverVoices = () =>
+  (ttsCheck ??= fetch(apiUrl('/api/tts'))
+    .then((r) => r.json())
+    .then((j: { languages?: string[] }) => (serverLangs = j.languages ?? []))
+    .catch(() => { ttsCheck = null; return [] as string[]; }));
+let serverLangs: string[] = [];
+
+/** Asks the server to load a language's voice now, so the first sentence in it isn't slow. */
+export function prepareVoice(language: Language) {
+  void serverVoices().then((langs) => {
+    if (langs.includes(language)) void fetch(apiUrl(`/api/tts?warm=${encodeURIComponent(language)}`)).catch(() => {});
+  });
+}
 let speaking = false;
 export const isSpeaking = () => speaking;
 
@@ -105,10 +119,11 @@ export async function speak(text: string, opts: { language: Language; rate?: num
 }
 
 async function speakInner(text: string, opts: { language: Language; rate?: number; voiceURI?: string }): Promise<void> {
-  // Groq's TTS models are English-only; Hindi and Marathi use the device voice.
-  if (opts.language === 'en' && (await groqTtsAvailable())) {
+  // The server's voice when it has one for this language (the same voice on every device); otherwise
+  // the device's own voice.
+  if ((await serverVoices()).includes(opts.language)) {
     try {
-      const res = await fetch(apiUrl('/api/tts'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      const res = await fetch(apiUrl('/api/tts'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, language: opts.language }) });
       if (res.ok) {
         const url = URL.createObjectURL(await res.blob());
         const audio = new Audio(url);
@@ -128,7 +143,7 @@ async function speakInner(text: string, opts: { language: Language; rate?: numbe
   }
   if (typeof speechSynthesis === 'undefined') return;
   // Browsers fill the voice list asynchronously; asking too early finds nothing and Live Mode went silent.
-  await voicesReady();
+  await deviceVoicesReady();
   const voice = pickVoice(opts.language, opts.voiceURI);
   // Still no voice for this language once the list has loaded: stay silent rather than read it with a
   // wrong-language voice. The words are on screen, and the session shows a notice about installing one.
@@ -143,9 +158,14 @@ async function speakInner(text: string, opts: { language: Language; rate?: numbe
   });
 }
 
-/** Resolves once the browser has listed its voices (or after 1.5 s, if it never says). */
+/** Resolves once the server's voice list and the browser's voices are known (browser: or after 1.5 s). */
+export async function voicesReady(): Promise<void> {
+  await serverVoices();
+  await deviceVoicesReady();
+}
+
 let voicesPromise: Promise<void> | null = null;
-export function voicesReady(): Promise<void> {
+function deviceVoicesReady(): Promise<void> {
   if (typeof speechSynthesis === 'undefined') return Promise.resolve();
   if (speechSynthesis.getVoices().length) return Promise.resolve();
   return (voicesPromise ??= new Promise<void>((resolve) => {
@@ -168,8 +188,9 @@ function pickVoice(lang: Language, voiceURI?: string): SpeechSynthesisVoice | un
   return by(lang) ?? (BORROW[lang] ? by(BORROW[lang]!) : undefined);
 }
 
-/** Whether this device can read the language aloud (its own voice, or a borrowed one). */
+/** Whether this device can read the language aloud (the server's voice, its own, or a borrowed one). */
 export function voiceAvailable(lang: Language): boolean {
+  if (serverLangs.includes(lang)) return true;
   if (typeof speechSynthesis === 'undefined') return false;
   return lang === 'en' || !!pickVoice(lang);
 }

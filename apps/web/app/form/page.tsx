@@ -10,8 +10,8 @@ import { discardSession, GFORM_KEY, loadSession } from '@/lib/session-store';
 import { fmt, localizeMessage, Rich } from '@/lib/i18n';
 import { useSettings } from '@/lib/settings';
 import type { SurfaceHandle } from '@/lib/surface';
+import { scanForm } from '@/lib/form-scan';
 
-interface ScannedForm { formId: string; title: string; description: string; questions: FormQuestion[] }
 type Platform = 'google' | 'microsoft';
 const platformOf = (s: Session): Platform => (s.questions.some((q) => q.source.kind === 'ms-form') ? 'microsoft' : 'google');
 type Step =
@@ -28,10 +28,9 @@ export default function FormPage() {
   const scan = async (url: string) => {
     setStep({ s: 'reading', url });
     try {
-      const api = parseMicrosoftFormUrl(url) ? '/api/msform' : '/api/gform';
-      const res = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
-      const data = (await res.json()) as ScannedForm & { error?: string };
-      if (!res.ok) return setStep({ s: 'paste', url, error: data.error ?? t.form.unreadable });
+      const r = await scanForm(url);
+      if ('error' in r) return setStep({ s: 'paste', url, error: r.error });
+      const data = r.form;
       const session = createSession({ id: crypto.randomUUID(), formTitle: data.title, questions: data.questions, language: settings.language });
       discardSession(GFORM_KEY);
       setStep({ s: 'fill', session, resumed: false });

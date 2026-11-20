@@ -25,3 +25,9 @@ apps/web/public/vad/
 
 # Generated after next build; includes this build's content-hashed assets.
 apps/web/public/sw.js
+
+# Python API
+backend/.venv/
+backend/models/
+backend/.env
+__pycache__/

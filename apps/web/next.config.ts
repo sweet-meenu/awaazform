@@ -21,8 +21,15 @@ const directives = (frameAncestors: string) => [
 ].join('; ');
 const csp = directives("'self'");
 
+// The API is the FastAPI app in backend/. Proxying /api/* keeps one origin for the browser (CSP
+// connect-src 'self', no CORS), and the backend's own guard still checks who is calling.
+const BACKEND_URL = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@awaazform/core'],
+  async rewrites() {
+    return [{ source: '/api/:path*', destination: `${BACKEND_URL}/api/:path*` }];
+  },
   // PDFs and Word files share one page now; keep old links working.
   async redirects() {
     return [

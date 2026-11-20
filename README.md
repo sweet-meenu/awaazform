@@ -75,14 +75,19 @@ Bolu **listens**, **writes down** what you said, **checks** it, and **reads it b
 
 ## Quick start
 
+This branch (`alternate`) runs as two apps: the **Next.js** interface and a **FastAPI** API (`backend/`). Next.js proxies `/api/*` to the API, so the browser still talks to one origin.
+
 ```bash
-corepack enable
-pnpm install
-cp apps/web/.env.example apps/web/.env.local   # add your GROQ_API_KEY
-pnpm dev                                       # http://localhost:3000
+corepack enable && pnpm install
+cd backend && uv sync && cp .env.example .env && cd ..   # add your GROQ_API_KEY to backend/.env
+(cd backend && uv run python -m app.download)            # optional: fetch every local voice now (~2 GB)
+pnpm dev:all                                             # API :8000 + web :3000 (http://localhost:3000)
+pnpm demo                                                # the same with a production build: smoother for presenting
 ```
 
-Without a key the app still works: you type your answers, and read-back uses the browser's voice.
+Speech output runs **on your machine**: Kokoro for English and Hindi, Meta's MMS-TTS for Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Malayalam, Punjabi and Assamese (Nepali uses the Hindi voice). Every device then hears the same voice, even browsers with no Indian-language voices. Speech-to-text, the assistant and question translation still use Groq. Without a key the app still works: you type your answers, and read-back uses the local voices.
+
+For a demo, set `TTS_PRELOAD` in `backend/.env` to the languages you will show, so they are loaded at startup. `GET /api/health` lists what is ready.
 
 | Command | Purpose |
 |---|---|
@@ -103,13 +108,14 @@ Download it from `/extension`, or run `node apps/extension/build.mjs` (set `AWAA
 
 ## Deploy on Vercel
 
-Live at **[awaazform.vercel.app](https://awaazform.vercel.app)**. To deploy your own copy, import the repo, set **Root Directory** to `apps/web`, and add the variables from [`.env.example`](apps/web/.env.example). Vercel detects Next.js and pnpm on its own.
+Live at **[awaazform.vercel.app](https://awaazform.vercel.app)** (from `main`, where the API is Next.js route handlers). This branch needs the FastAPI service running somewhere too: deploy `backend/` (any host that runs Python; the local voices want ~2 GB RAM), then set `BACKEND_URL` on the web app to its address and `ALLOWED_ORIGINS` on the API to the web app's.
 
 ## Project layout
 
 ```
 packages/core   types, validators, safety rules, session reducer, confirm gate, tool runner
-apps/web        Next.js app: session, Google/Microsoft Form link, PDF, Word, profiles, report, settings, API routes
+apps/web        Next.js app: session, Google/Microsoft Form link, PDF, Word, profiles, report, settings (proxies /api/* to backend)
+backend         FastAPI: Groq speech-to-text and chat, translation, PDF question finding, safe form fetching, local voices
 apps/extension  Chrome/Edge MV3 extension: Bolu's in-page widget (esbuild; zip served from /downloads)
 media           the explainer video, rendered from code (see media/README.md)
 example_forms   real test forms (ECI Form 6)

@@ -6,6 +6,9 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "dev:all": "scripts/dev-local.sh",
+    "demo": "scripts/dev-local.sh --prod",
+    "contract": "node scripts/export-contract.mjs"
   }
 }
